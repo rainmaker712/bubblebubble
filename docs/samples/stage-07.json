@@ -1,0 +1,19 @@
+{
+  "$schemaVersion": 1, "id": "stage-07-toy-factory", "title": "장난감 공장", "privateLocalPrototype": true,
+  "logicalSize": { "width": 256, "height": 224 }, "tileSize": 16,
+  "theme": { "background": "toy_factory", "music": "moonlight_bubble_march", "palette": ["#29162f", "#81445d", "#e16b65", "#f2b84b", "#fff0b5"] },
+  "legend": { "#": "solid_platform", ".": "empty" },
+  "layout": ["################","#..............#","#.##..##..##...#","#..............#","#....##....##..#","#..##..........#","#........##....#","#.####.........#","#..............#","#....####......#","#..........###.#","#..##..........#","#..............#","####...##...####"],
+  "playerSpawns": [{ "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 } }, { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 } }],
+  "enemies": [
+    { "id": "g7a", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 2, "y": 10 } }, { "id": "g7b", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 13, "y": 10 } },
+    { "id": "g7c", "kind": "ghost_bubblun", "behavior": "patrol", "tile": { "x": 4, "y": 8 } }, { "id": "g7d", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 11, "y": 8 } },
+    { "id": "g7e", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 3, "y": 6 } }, { "id": "g7f", "kind": "ghost_bobblun", "behavior": "patrol", "tile": { "x": 12, "y": 6 } },
+    { "id": "g7g", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 5, "y": 4 } }, { "id": "g7h", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 10, "y": 4 } },
+    { "id": "g7i", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 6, "y": 2 } }, { "id": "g7j", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 9, "y": 2 } },
+    { "id": "g7k", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 8, "y": 11 } }
+  ],
+  "items": [{ "id": "cloud-7", "kind": "cloud", "tile": { "x": 8, "y": 6 } }, { "id": "shoes-7", "kind": "shoes", "tile": { "x": 4, "y": 9 } }, { "id": "shield-7", "kind": "shield", "tile": { "x": 12, "y": 9 } }],
+  "airflow": [{ "id": "factory-up", "tileRect": { "x": 6, "y": 1, "width": 4, "height": 12 }, "direction": { "x": 0, "y": -1 }, "bubbleSpeedMultiplier": 1.3 }],
+  "rules": { "startingLives": 3, "timeLimitSeconds": 47, "enrageAtSecondsRemaining": 18, "verticalWrap": true, "clearWhenAllEnemiesDefeated": true, "nextStageId": "stage-08-ice-palace" }, "tutorial": []
+}

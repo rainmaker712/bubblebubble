@@ -1,0 +1,48 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-02-starlight-stairs",
+  "title": "별빛 계단",
+  "privateLocalPrototype": true,
+  "logicalSize": { "width": 256, "height": 224 },
+  "tileSize": 16,
+  "theme": { "background": "starlight_stairs", "music": "moonlight_bubble_march", "palette": ["#15132e", "#735eb2", "#f4a6c6", "#dff7ff", "#fff1a8"] },
+  "legend": { "#": "solid_platform", ".": "empty" },
+  "layout": [
+    "################",
+    "#..............#",
+    "#..###.....###.#",
+    "#..............#",
+    "#......###.....#",
+    "#.###..........#",
+    "#..........###.#",
+    "#....###.......#",
+    "#..............#",
+    "#.......###....#",
+    "#.###..........#",
+    "#..........###.#",
+    "#..............#",
+    "###..######..###"
+  ],
+  "playerSpawns": [
+    { "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 }, "placeholderAsset": "white_dog_shape" },
+    { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 }, "placeholderAsset": "pink_rabbit_shape" }
+  ],
+  "enemies": [
+    { "id": "ghost-bubblun-2a", "kind": "ghost_bubblun", "behavior": "patrol", "tile": { "x": 3, "y": 9 }, "placeholderAsset": "green_dinosaur_ghost_shape" },
+    { "id": "ghost-bobblun-2a", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 11, "y": 5 }, "placeholderAsset": "blue_dinosaur_ghost_shape" },
+    { "id": "ghost-bobblun-2b", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 7, "y": 3 }, "placeholderAsset": "blue_dinosaur_ghost_shape" },
+    { "id": "ghost-bubblun-2b", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 4, "y": 4 }, "placeholderAsset": "green_dinosaur_ghost_shape" },
+    { "id": "ghost-bobblun-2c", "kind": "ghost_bobblun", "behavior": "patrol", "tile": { "x": 12, "y": 8 }, "placeholderAsset": "blue_dinosaur_ghost_shape" },
+    { "id": "ghost-bubblun-2c", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 8, "y": 11 }, "placeholderAsset": "green_dinosaur_ghost_shape" }
+  ],
+  "items": [
+    { "id": "water-bubble-2", "kind": "water", "tile": { "x": 8, "y": 8 } },
+    { "id": "shield-2", "kind": "shield", "tile": { "x": 4, "y": 4 } }
+  ],
+  "airflow": [
+    { "id": "left-updraft", "tileRect": { "x": 2, "y": 2, "width": 5, "height": 10 }, "direction": { "x": 0, "y": -1 }, "bubbleSpeedMultiplier": 1.0 },
+    { "id": "right-drift", "tileRect": { "x": 7, "y": 1, "width": 8, "height": 11 }, "direction": { "x": 1, "y": -1 }, "bubbleSpeedMultiplier": 0.7 }
+  ],
+  "rules": { "startingLives": 3, "timeLimitSeconds": 65, "enrageAtSecondsRemaining": 30, "verticalWrap": true, "clearWhenAllEnemiesDefeated": true, "nextStageId": "stage-03-ghost-tower" },
+  "tutorial": [{ "trigger": "stage_start", "message": "공룡 귀신이 발판 아래까지 쫓아와요!" }]
+}

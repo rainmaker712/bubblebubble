@@ -1,0 +1,109 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-01-moonlight-playground",
+  "title": "달빛 놀이터",
+  "privateLocalPrototype": true,
+  "logicalSize": { "width": 256, "height": 224 },
+  "tileSize": 16,
+  "theme": {
+    "background": "moonlight_playground",
+    "music": "placeholder_lullaby",
+    "palette": ["#17152f", "#6653a6", "#f4a6c6", "#dff7ff", "#fff1a8"]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#...####.......#",
+    "#..........###.#",
+    "#..............#",
+    "#..####........#",
+    "#..............#",
+    "#.......####...#",
+    "#..............#",
+    "#....###.......#",
+    "#..............#",
+    "#.###......###.#",
+    "#..............#",
+    "####..####..####"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "pochacco",
+      "tile": { "x": 2, "y": 12 },
+      "placeholderAsset": "white_dog_shape"
+    },
+    {
+      "player": 2,
+      "character": "my_melody",
+      "tile": { "x": 13, "y": 12 },
+      "placeholderAsset": "pink_rabbit_shape"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "ghost-bubblun-1",
+      "kind": "ghost_bubblun",
+      "behavior": "patrol",
+      "tile": { "x": 3, "y": 10 },
+      "patrolTiles": 2,
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-1",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": { "x": 12, "y": 10 },
+      "activationDistanceTiles": 6,
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bubblun-1b",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": { "x": 8, "y": 8 },
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-1b",
+      "kind": "ghost_bobblun",
+      "behavior": "patrol",
+      "tile": { "x": 6, "y": 4 },
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    }
+  ],
+  "items": [
+    { "id": "speed-shoes-1", "kind": "shoes", "tile": { "x": 8, "y": 8 } }
+  ],
+  "airflow": [
+    {
+      "id": "center-updraft",
+      "tileRect": { "x": 6, "y": 4, "width": 4, "height": 9 },
+      "direction": { "x": 0, "y": -1 },
+      "bubbleSpeedMultiplier": 1.0
+    },
+    {
+      "id": "top-left-drift",
+      "tileRect": { "x": 1, "y": 1, "width": 14, "height": 3 },
+      "direction": { "x": -1, "y": 0 },
+      "bubbleSpeedMultiplier": 0.5
+    }
+  ],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 70,
+    "enrageAtSecondsRemaining": 30,
+    "verticalWrap": true,
+    "clearWhenAllEnemiesDefeated": true,
+    "nextStageId": "stage-02-starlight-stairs"
+  },
+  "tutorial": [
+    { "trigger": "stage_start", "message": "거품으로 공룡 귀신을 가둬 보세요!" },
+    { "trigger": "first_enemy_captured", "message": "가둔 거품을 터뜨리면 귀신이 사라져요!" },
+    { "trigger": "all_enemies_defeated", "message": "달빛 놀이터 클리어!" }
+  ]
+}

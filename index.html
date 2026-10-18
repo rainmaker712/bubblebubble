@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="포차코와 마이멜로디의 달빛 버블 액션 게임" />
+    <title>BubbleBubble — 달빛 놀이터</title>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">PRIVATE LOCAL PROTOTYPE · PHASER 4</p>
+          <h1>Bubble<span>Bubble</span></h1>
+          <p class="subtitle">포차코와 마이멜로디의 달빛 놀이터</p>
+        </div>
+        <button id="music-toggle" class="sound-button" type="button" aria-pressed="true">♪ 음악 켜짐</button>
+      </header>
+
+      <section class="cabinet" aria-label="게임 화면">
+        <div id="game-root" class="game-root" tabindex="0" aria-label="BubbleBubble 게임 캔버스"></div>
+        <div id="overlay" class="overlay">
+          <div class="panel">
+            <p id="result-label" class="result-label">STAGE 01</p>
+            <h2 id="overlay-title">달빛 놀이터</h2>
+            <p id="overlay-copy">전진하는 거품을 공룡 귀신에게 직접 맞힌 뒤 몸으로 톡 터뜨려 주세요.</p>
+            <div class="actions">
+              <button id="one-player" type="button" disabled>포차코로 시작</button>
+              <button id="two-player" type="button" disabled>둘이서 시작</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="조작법">
+        <article class="control-card pochacco-card">
+          <div class="avatar dog" aria-hidden="true"><i></i></div>
+          <div><h2>포차코 · 1P</h2><p><kbd>A</kbd><kbd>D</kbd> 이동 · <kbd>W</kbd> 점프 · <kbd>F</kbd> 거품</p></div>
+        </article>
+        <article class="control-card melody-card">
+          <div class="avatar rabbit" aria-hidden="true"><i></i></div>
+          <div><h2>마이멜로디 · 2P</h2><p><kbd>←</kbd><kbd>→</kbd> 이동 · <kbd>↑</kbd> 점프 · <kbd>/</kbd> 또는 <kbd>Enter</kbd> 거품</p></div>
+        </article>
+      </section>
+      <p class="hint"><kbd>Esc</kbd> 일시정지 · <kbd>C</kbd> 생명 소진 후 이어하기 · 바닥 구멍은 화면 위로 이어져요.</p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
