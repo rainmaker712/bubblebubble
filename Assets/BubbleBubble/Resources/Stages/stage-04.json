@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-04-candy-cavern",
-  "title": "사탕 동굴",
+  "title": "마카롱 정원",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "candy_cavern",
+    "background": "macaron",
     "music": "moonlight_bubble_march",
     "palette": [
-      "#2d1539",
-      "#d95691",
-      "#ff9fbe",
-      "#ffd36e",
-      "#fff2c4"
+      "#2e234a",
+      "#ad85c9",
+      "#d4b9ee",
+      "#efacbd",
+      "#b4edcf"
     ]
   },
   "legend": {

@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-02-starlight-stairs",
-  "title": "별빛 계단",
+  "title": "딸기 케이크 공방",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "starlight_stairs",
+    "background": "cake",
     "music": "moonlight_bubble_march",
     "palette": [
-      "#15132e",
-      "#735eb2",
-      "#f4a6c6",
-      "#dff7ff",
-      "#fff1a8"
+      "#351c35",
+      "#ac627e",
+      "#f2c1ca",
+      "#ef6a8d",
+      "#fff0ce"
     ]
   },
   "legend": {

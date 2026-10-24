@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-01-moonlight-playground",
-  "title": "달빛 놀이터",
+  "title": "도쿄빙수 가게",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "moonlight_playground",
+    "background": "tokyo_bingsu",
     "music": "placeholder_lullaby",
     "palette": [
-      "#17152f",
-      "#632076",
-      "#ed438f",
-      "#58e5ff",
-      "#ffdc59"
+      "#172c43",
+      "#82c9d9",
+      "#f4ecdc",
+      "#ed728c",
+      "#fff3be"
     ]
   },
   "legend": {

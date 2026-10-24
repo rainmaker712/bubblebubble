@@ -12,6 +12,7 @@ namespace BubbleBubble
         public GameWorld World { get; private set; }
         readonly Dictionary<int, SpriteRenderer> views = new Dictionary<int, SpriteRenderer>();
         readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
+        readonly List<Sprite> generatedSprites = new List<Sprite>();
         readonly List<GameObject> scenery = new List<GameObject>();
         readonly PlayerInput[] inputs = new PlayerInput[2];
         Camera gameCamera;
@@ -19,16 +20,24 @@ namespace BubbleBubble
         MaterialPropertyBlock rainbowProperties;
         MoonlightAudio music;
         AudioSource storyVoice;
-        readonly AudioClip[] storyVoices = new AudioClip[3];
+        [Serializable] public sealed class StoryChapter { public string title; public string[] lines; }
+        [Serializable] public sealed class StoryBook { public StoryChapter[] pages; }
+        StoryBook story;
+        AudioClip[] storyVoices;
+        public int StoryPageCount => story.pages.Length;
         Font font;
         GUIStyle text, title, small, button;
         Texture2D white;
         float accumulator;
         int drawnStage = -1;
         bool stylesReady;
-        bool showingStory;
+        bool showingStory, showingEnding, endingShown;
+        public bool ShowingEnding => showingStory && showingEnding;
         int selectedPlayers = 1, storyPage;
-        int storyVoicePage = -1;
+        public bool ShowingStory => showingStory;
+        public int StoryPage => storyPage;
+        public bool StoryVoicePlaying => storyVoice != null && storyVoice.isPlaying;
+        public AudioClip CurrentStoryVoice => storyVoice.clip;
         static readonly Color Cream = new Color(1,.96f,.75f), Pink = new Color(1,.48f,.68f);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -56,7 +65,7 @@ namespace BubbleBubble
             rainbowMaterial = new Material(Resources.Load<Shader>("Rainbow")); rainbowProperties = new MaterialPropertyBlock();
             music = gameObject.AddComponent<MoonlightAudio>();
             storyVoice = gameObject.AddComponent<AudioSource>();storyVoice.playOnAwake=false;storyVoice.volume=1f;
-            for(int i=0;i<storyVoices.Length;i++)storyVoices[i]=Resources.Load<AudioClip>($"Audio/story-{i+1:00}");
+            LoadStory("prologue","story");
             DrawStage();
         }
         void Update()
@@ -71,7 +80,7 @@ namespace BubbleBubble
                 if(showingStory)
                 {
                     if(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))AdvanceStory();
-                    if(Input.GetKeyDown(KeyCode.Backspace))storyPage=Math.Max(0,storyPage-1);
+                    if(Input.GetKeyDown(KeyCode.Backspace))PreviousStory();
                 }
                 else
                 {
@@ -87,21 +96,49 @@ namespace BubbleBubble
                 World.Tick(1f/60,inputs); accumulator -= 1f/60;
                 inputs[0].jumpPressed = inputs[1].jumpPressed = false;
             }
+            if(World.Phase==GamePhase.Victory && !endingShown)OpenEnding();
             if(drawnStage != World.StageIndex)DrawStage();
             SyncViews();
-            music.SetState(World.Phase != GamePhase.Menu,World.Danger,World.Phase == GamePhase.Paused);
+            music.SetState(!showingStory && World.Phase != GamePhase.Menu,World.Danger,World.Phase == GamePhase.Paused);
         }
         void ReadInput(int i,KeyCode left,KeyCode right,KeyCode jump,KeyCode fire)
         {
             inputs[i].move = (Input.GetKey(right)?1:0)-(Input.GetKey(left)?1:0);
             inputs[i].jumpPressed |= Input.GetKeyDown(jump);inputs[i].jumpHeld = Input.GetKey(jump);inputs[i].fire = Input.GetKey(fire);
         }
-        public void Begin(int count) { World.Start(count);DrawStage();accumulator=0; }
-        void OpenStory(int count) { selectedPlayers=count;storyPage=0;storyVoicePage=-1;showingStory=true; }
-        void AdvanceStory()
+        public void Begin(int count) { endingShown=false;showingEnding=false;showingStory=false;storyVoice.Stop();World.Start(count);DrawStage();accumulator=0; }
+        public void OpenStory(int count)
         {
-            if(storyPage<2)storyPage++;
-            else { showingStory=false;storyVoice.Stop();storyVoicePage=-1;Begin(selectedPlayers); }
+            LoadStory("prologue","story");showingEnding=false;
+            World.ReturnToMenu(); selectedPlayers=count;storyPage=0;showingStory=true;
+            music.SetState(false,false,false);PlayStoryVoice();
+        }
+        void LoadStory(string name,string audioPrefix)
+        {
+            story=JsonUtility.FromJson<StoryBook>(Resources.Load<TextAsset>("Story/"+name).text);
+            storyVoices=new AudioClip[StoryPageCount];
+            for(int i=0;i<storyVoices.Length;i++)storyVoices[i]=Resources.Load<AudioClip>($"Audio/{audioPrefix}-{i+1:00}");
+        }
+        void OpenEnding()
+        {
+            endingShown=true;showingEnding=true;showingStory=true;storyPage=0;
+            LoadStory("ending","ending");music.SetState(false,false,false);PlayStoryVoice();
+        }
+        public void PreviousStory() { storyPage=Math.Max(0,storyPage-1);PlayStoryVoice(); }
+        public void PlayStoryVoice()
+        {
+            storyVoice.Stop();storyVoice.clip=storyVoices[storyPage];
+            if(storyVoice.clip!=null)storyVoice.Play();
+        }
+        public void AdvanceStory()
+        {
+            if(storyPage<StoryPageCount-1) { storyPage++;PlayStoryVoice(); }
+            else
+            {
+                showingStory=false;storyVoice.Stop();
+                if(showingEnding)showingEnding=false;
+                else Begin(selectedPlayers);
+            }
         }
         void OnApplicationFocus(bool focus) { if(!focus && World != null && World.Phase == GamePhase.Playing)World.TogglePause(); }
         Sprite Art(string name)
@@ -109,6 +146,11 @@ namespace BubbleBubble
             if(!sprites.TryGetValue(name,out var sprite))
             {
                 sprite=Resources.Load<Sprite>("Art/"+name);
+                if(sprite==null)
+                {
+                    sprite=FoodArt.Create(name);
+                    if(sprite!=null)generatedSprites.Add(sprite);
+                }
                 if(sprite==null)throw new InvalidOperationException("Missing sprite: "+name);
                 sprites.Add(name,sprite);
             }
@@ -131,7 +173,23 @@ namespace BubbleBubble
             ColorUtility.TryParseHtmlString(World.Stage.theme.palette[0],out var background);gameCamera.backgroundColor=background;
             var layout=World.Stage.layout;
             for(int y=0;y<layout.Length;y++)for(int x=0;x<layout[y].Length;x++)
-                if(layout[y][x]=='#')scenery.Add(MakeSprite("Platform "+x+","+y,"platform-s"+(drawnStage+1),x*32+16,y*32+16,32,32,-5).gameObject);
+                if(layout[y][x]=='#')scenery.Add(MakeSprite("Platform "+x+","+y,(drawnStage<6?"theme-platform-"+drawnStage:"platform-s"+(drawnStage+1)),x*32+16,y*32+16,32,32,-5).gameObject);
+            if(drawnStage<6)
+            {
+                for(int i=0;i<3;i++)
+                {
+                    var decoration=MakeSprite("Theme decoration "+i,"theme-food-"+drawnStage,110+i*146,145+(i%2)*140,100,100,-8);
+                    decoration.color=new Color(1,1,1,.28f);scenery.Add(decoration.gameObject);
+                }
+            }
+            if(drawnStage==4)
+            {
+                for(int i=0;i<5;i++)
+                {
+                    var seaweed=MakeSprite("Aquarium seaweed "+i,"aquarium-seaweed",65+i*95,350,45,100,-7);
+                    seaweed.color=new Color(1,1,1,.5f);scenery.Add(seaweed.gameObject);
+                }
+            }
             var rng=new System.Random(100+drawnStage);
             for(int i=0;i<32;i++)
             {
@@ -155,7 +213,7 @@ namespace BubbleBubble
                 }
                 if(actor is Bubble b) { rainbow=b.rainbow;r.sortingOrder=15;float pulse=1+(float)Math.Sin(World.Elapsed*7)*.06f;SetPose(r,b.x,b.y,b.width*pulse,b.height*pulse); }
                 if(actor is Enemy e)r.sortingOrder=e.captured?16:18;
-                if(actor is Drop drop) { r.sortingOrder=24;if(drop.kind=="trash")r.color=new Color(1,.65f+.25f*Mathf.Sin(World.Elapsed*6),.7f); }
+                if(actor is Drop drop) { r.sortingOrder=24;if(drop.kind=="trash" || drop.kind=="poop")r.color=new Color(1,.65f+.25f*Mathf.Sin(World.Elapsed*6),.7f); }
                 if(actor is Boss boss) { r.sortingOrder=19;r.color=boss.hurtFor>0?Pink:Color.white; }
                 if(actor is Hazard hazard && !hazard.Active)r.color=new Color(1,.6f,.3f,.16f+.2f*Mathf.Abs(Mathf.Sin(World.Elapsed*12)));
                 if(actor is Star s) { r.sortingOrder=35;r.transform.localRotation=Quaternion.Euler(0,0,s.age*720); }
@@ -202,7 +260,7 @@ namespace BubbleBubble
                 }
                 foreach(var item in World.Items)
                 {
-                    var itemStyle=new GUIStyle(small);if(item.kind=="trash")itemStyle.normal.textColor=Pink;
+                    var itemStyle=new GUIStyle(small);if(item.kind=="trash" || item.kind=="poop")itemStyle.normal.textColor=Pink;
                     Label(item.x-45,item.y-34,110,20,GameRules.PowerName(item.kind),itemStyle);
                 }
                 foreach(var hazard in World.Hazards.Where(h=>!h.Active))Label(hazard.x-25,hazard.kind=="lightning"?388:hazard.y-28,70,20,"주의!",small);
@@ -211,6 +269,8 @@ namespace BubbleBubble
                     Center(33,$"{World.Boss.displayName}  {World.Boss.hp}/{World.Boss.maxHp}",11);
                     Box(new Rect(146,63,220,6),new Color(.2f,.08f,.15f));Box(new Rect(146,63,220f*World.Boss.hp/World.Boss.maxHp,6),Pink);
                 }
+                if(World.Boss==null)Center(33,World.Stage.title,11);
+                if(World.FishCurse)Label(38,105,430,18,"물고기 부하 주의 · 고래귀신과 함께 나타나요",small);
                 if(World.NoticeTime>0) { Box(new Rect(38,371,436,30),new Color(.08f,.06f,.16f,.9f));Center(371,World.Notice,12); }
             }
             if(showingStory)Story();
@@ -234,7 +294,7 @@ namespace BubbleBubble
         {
             Box(new Rect(28,54,456,350),new Color(.055f,.04f,.13f,.97f));
             Center(69,"BUBBLE BUBBLE",30);
-            Center(109,World.Phase==GamePhase.Victory?"모든 스테이지 클리어!":World.Phase==GamePhase.GameOver?"다시 도전해 볼까요?":"낙콩 & 무닝의 달빛 모험",15);
+            Center(109,World.Phase==GamePhase.Victory?"모든 스테이지 클리어!":World.Phase==GamePhase.GameOver?"다시 도전해 볼까요?":"낙콩 & 무닝의 냉장고 모험",15);
             if(World.Phase!=GamePhase.Menu)Center(140,$"최종 점수 {World.Score:N0}",13);
             DrawPortrait("nakkong",166,157);DrawPortrait("muning",294,157);
             if(GUI.Button(new Rect(64,224,182,42),"1 · 낙콩 혼자 하기",button))OpenStory(1);
@@ -242,55 +302,76 @@ namespace BubbleBubble
             Center(276,"1P  A / D 이동 · W 점프 · F 거품",12);
             Center(300,"2P  ← / → 이동 · ↑ 점프 · . 거품",12);
             Center(332,"아이템은 랜덤 등장 · 효과는 이번 스테이지까지",10);
-            Center(353,"쓰레기통은 피하세요! · 마지막 10탄은 랜덤 보스",10);
+            Center(353,"쓰레기통·똥은 피하세요! · 마지막 10탄은 랜덤 보스",10);
             Center(375,"Esc 일시정지 · C 이어하기 · M 음악",10);
         }
         void Story()
         {
-            if(storyVoicePage!=storyPage)
-            {
-                storyVoice.Stop();storyVoicePage=storyPage;
-                if(storyVoices[storyPage]!=null) { storyVoice.clip=storyVoices[storyPage];storyVoice.Play(); }
-            }
             Box(new Rect(28,45,456,360),new Color(.055f,.04f,.13f,.98f));
-            Center(56,"낙콩 & 무닝의 냉장고",19);
-            Box(new Rect(72,91,368,174),new Color(.11f,.16f,.27f));
-            // A bright, pixel-art fridge scene composed from the game's existing food and character sprites.
-            Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
-            Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
-            Box(new Rect(259,146,120,3),new Color(.66f,.82f,.88f));
-            Box(new Rect(259,188,120,3),new Color(.66f,.82f,.88f));
-            Box(new Rect(259,225,120,3),new Color(.66f,.82f,.88f));
-            if(storyPage==0)
+            Center(56,story.pages[storyPage].title,18);
+            Box(new Rect(72,91,368,166),new Color(.11f,.16f,.27f));
+            if(showingEnding)
             {
-                DrawStoryFood("apple",274,120);DrawStoryFood("banana",320,120);DrawStoryFood("grapes",360,120);
-                DrawStoryFood("strawberry",277,158);DrawStoryFood("cherries",320,158);DrawStoryFood("cookie",358,158);
-                DrawStoryFood("apple",279,198);DrawStoryFood("banana",329,198);DrawStoryFood("cookie",365,198);
-                Center(274,"냉장고에는 맛있는 간식이 가득했어요!",12);
+                Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
+                Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
+                for(int i=0;i<6;i++)DrawStoryFood("theme-food-"+i,260+(i%3)*40,120+(i/3)*48);
+                if(storyPage==0)DrawStoryFood("bubble",310,200);
+                if(storyPage==3)DrawStoryFood("theme-food-0",155,150);
             }
-            else if(storyPage==1)
+            else if(storyPage<=2)
             {
+                Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
+                Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
+                for(int y=146;y<=226;y+=40)Box(new Rect(259,y,120,3),new Color(.66f,.82f,.88f));
+                if(storyPage==0)
+                {
+                    DrawStoryFood("theme-food-0",274,115);DrawStoryFood("theme-food-1",320,115);DrawStoryFood("theme-food-2",354,115);
+                    DrawStoryFood("theme-food-3",277,155);DrawStoryFood("theme-food-5",320,155);
+                }
                 DrawStoryFood("cookie",313,197);
-                Center(274,"그런데 어느 날, 냉장고가 텅 비었어요.",12);
-                Center(294,"쿠키 하나만 남기고 모두 사라졌죠!",12);
+                if(storyPage==2)DrawStoryFood("bubble",280,156);
+            }
+            else if(storyPage==4)
+            {
+                for(int i=0;i<6;i++)
+                {
+                    int x=100+(i%3)*120,y=110+(i/3)*65;
+                    DrawStoryFood("theme-food-"+i,x,y);
+                    Label(x-10,y+30,115,20,new[]{"도쿄빙수","케이크","아이스크림","마카롱","수족관","수박"}[i],small);
+                }
+            }
+            else if(storyPage==6)
+            {
+                DrawStoryFood("cookie",238,124);
             }
             else
             {
-                DrawPortrait("nakkong",274,169);DrawPortrait("muning",334,169);
-                Center(274,"낙콩과 무닝은 사라진 간식을 찾아",12);
-                Center(294,"보글보글 모험을 떠나기로 했어요!",12);
+                Box(new Rect(255,105,136,140),new Color(.25f,.39f,.52f));
+                DrawStoryFood(storyPage==7?"theme-food-0":"strawberry",300,130);
+                DrawStoryFood("ghost_enemy-v0",330,183);
+                DrawStoryFood("bubble",275,185);
             }
-            Label(88,317,80,22,$"{storyPage+1} / 3",small);
-            if(storyPage>0 && GUI.Button(new Rect(88,346,112,34),"이전",button))storyPage--;
+            if(storyPage!=4)
+            {
+                DrawPortrait("nakkong",120,179);DrawPortrait("muning",185,179);
+            }
+            for(int i=0;i<story.pages[storyPage].lines.Length;i++)
+                Center(263+i*20,story.pages[storyPage].lines[i],12);
+            Label(88,323,80,20,$"{storyPage+1} / {StoryPageCount}",small);
+            if(storyPage>0 && GUI.Button(new Rect(88,346,112,34),"이전",button))PreviousStory();
             if(GUI.Button(new Rect(205,346,86,34),"다시 듣기",button) && storyVoices[storyPage]!=null)
-            { storyVoice.Stop();storyVoice.clip=storyVoices[storyPage];storyVoice.Play(); }
-            var nextLabel=storyPage==2?"모험 시작!":"다음 ▶";
+            { PlayStoryVoice(); }
+            var nextLabel=storyPage==StoryPageCount-1?(showingEnding?"클리어 화면":"모험 시작!"):"다음 ▶";
             if(GUI.Button(new Rect(300,346,124,34),nextLabel,button))AdvanceStory();
-            Center(382,"Enter / Space  다음",9);
+            Center(382,"한국어 음성 이야기 · Enter / Space 다음",9);
         }
         void DrawStoryFood(string art,float x,float y)
         { GUI.DrawTexture(new Rect(x,y,30,29),Art(art).texture,ScaleMode.ScaleToFit,true); }
         void DrawPortrait(string art,float x,float y) { GUI.DrawTexture(new Rect(x-23,y,46,49),Art(art).texture,ScaleMode.ScaleToFit,true); }
-        void OnDestroy() { if(rainbowMaterial!=null)Destroy(rainbowMaterial);if(defaultMaterial!=null)Destroy(defaultMaterial); }
+        void OnDestroy() {
+            foreach(var sprite in generatedSprites)
+                if(sprite!=null)
+                { Destroy(sprite.texture);Destroy(sprite); }
+            if(rainbowMaterial!=null)Destroy(rainbowMaterial);if(defaultMaterial!=null)Destroy(defaultMaterial); }
     }
 }

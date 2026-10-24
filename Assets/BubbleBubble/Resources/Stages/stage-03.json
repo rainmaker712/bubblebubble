@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-03-ghost-tower",
-  "title": "유령 탑",
+  "title": "아이스크림 나라",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "ghost_tower",
+    "background": "icecream",
     "music": "moonlight_bubble_march",
     "palette": [
-      "#100d27",
-      "#805db8",
-      "#ff98c2",
-      "#bcecff",
-      "#ffe58f"
+      "#163c40",
+      "#70bca8",
+      "#b5eddb",
+      "#ed9fcc",
+      "#fff2b8"
     ]
   },
   "legend": {

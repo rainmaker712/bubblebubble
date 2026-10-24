@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-05-rainbow-sky",
-  "title": "무지개 하늘섬",
+  "title": "물고기 수족관",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "rainbow_sky",
+    "background": "aquarium",
     "music": "moonlight_bubble_march",
     "palette": [
-      "#102b46",
-      "#35a7a0",
-      "#8de4d4",
-      "#8fc7ff",
-      "#fff3a8"
+      "#092e4b",
+      "#2b789a",
+      "#5bc4dc",
+      "#8bddd4",
+      "#f8ce73"
     ]
   },
   "legend": {

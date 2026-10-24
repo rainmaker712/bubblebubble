@@ -19,6 +19,8 @@ namespace BubbleBubble
         public readonly HashSet<char> ExitLetters = new HashSet<char>();
         public Boss Boss { get; private set; }
         public Actor Whale { get; private set; }
+        public bool FishCurse { get; private set; }
+        bool fishSummoned;
         public GamePhase Phase { get; private set; } = GamePhase.Menu;
         public int StageIndex { get; private set; }
         public int Score { get; private set; }
@@ -33,8 +35,8 @@ namespace BubbleBubble
         int nextId, count = 1, nextLetter;
         float nextLetterAt, nextItemAt;
         int itemsSpawned, starsSpawned;
-        static readonly string[] NormalItemPool = { "water", "fire", "lightning", "shoes", "shield", "cloud", "rainbow", "shootingStar", "trash" };
-        static readonly string[] BossItemPool = { "fire", "lightning", "water", "shield", "cloud", "rainbow", "trash" };
+        static readonly string[] NormalItemPool = { "water", "fire", "lightning", "shoes", "shield", "cloud", "rainbow", "shootingStar", "trash", "poop" };
+        static readonly string[] BossItemPool = { "fire", "lightning", "water", "shield", "cloud", "rainbow", "trash", "poop" };
         public GameWorld(StageData[] stages, int seed = 1)
         {
             if (stages == null || stages.Length == 0) throw new ArgumentException("Stages are required.");
@@ -51,7 +53,7 @@ namespace BubbleBubble
             if(index < 0 || index >= Stages.Length) throw new ArgumentOutOfRangeException(nameof(index));
             StageIndex = index; Elapsed = 0; TimeLeft = Stage.rules.timeLimitSeconds; PhaseTime = 0;
             Enemies.Clear(); Bubbles.Clear(); Items.Clear(); Drops.Clear(); Hazards.Clear(); Stars.Clear(); Sparks.Clear();
-            ExitLetters.Clear(); nextLetter = 0; nextLetterAt = 12; Whale = null; Boss = null;
+            ExitLetters.Clear(); nextLetter = 0; nextLetterAt = 12; Whale = null; Boss = null; FishCurse = fishSummoned = false;
             var old = Players.ToArray(); Players.Clear();
             for (int i = 0; i < count; i++)
             {
@@ -183,6 +185,14 @@ namespace BubbleBubble
         void UpdateEnemy(Enemy e, float dt)
         {
             if(e.defeated || e.captured) return;
+            if(e.kind == "whale_fish")
+            {
+                var target = Nearest(e); if(target == null)return;
+                float dx=target.x-e.x, dy=target.y-e.y;
+                float length=Math.Max(1,(float)Math.Sqrt(dx*dx+dy*dy));
+                e.x+=dx/length*78*dt;e.y+=dy/length*78*dt;e.flip=dx<0;
+                return;
+            }
             e.decisionIn -= dt; e.jumpIn -= dt;
             if(e.decisionIn <= 0)
             {
@@ -250,7 +260,7 @@ namespace BubbleBubble
         void Reward(float x,float y)
         {
             Score += 100; string[] kinds = { "strawberry", "banana", "cookie", "apple", "grapes", "cherries" };
-            int k = (Score / 100 + StageIndex) % kinds.Length;var d = Create<Drop>(kinds[k],Clamp(x,42,470),Clamp(y,58,374));d.kind=kinds[k];d.value = new[] { 250, 350, 500, 300, 400, 450 }[k];
+            int k = (Score / 100 + StageIndex) % kinds.Length;var d = Create<Drop>(StageIndex<6?"theme-food-"+StageIndex:kinds[k],Clamp(x,42,470),Clamp(y,58,374));d.kind=kinds[k];d.value = new[] { 250, 350, 500, 300, 400, 450 }[k];
             d.vx = random.Next(-40,41); d.vy = -180; Drops.Add(d); Burst(x,y,0xffe584);
             if(random.Next(100)<22) SpawnLetter(x,y-12);
         }
@@ -302,6 +312,7 @@ namespace BubbleBubble
                     if(d.power)
                     {
                         if(d.kind=="trash") { SpawnWhale();Tell("쓰레기통! 유령고래가 나타났어요!"); }
+                        else if(d.kind=="poop") { FishCurse=true;SummonFish();Tell(Whale==null?"똥을 먹었어요! 고래귀신이 오면 물고기 부하도 나타나요!":"똥을 먹었어요! 물고기 부하가 나타났어요!"); }
                         else { GrantPower(p,d.kind);Score+=750;Tell(PowerName(d.kind)+" 획득! 이번 스테이지 동안 유지 +750"); }
                     }
                     else if(d.letter)
@@ -383,7 +394,19 @@ namespace BubbleBubble
             var living=Players.Where(p=>!p.Dead).ToArray();
             var spawn=corners.OrderByDescending(c=>living.Length==0?0:living.Min(p=>Distance(p,c))).First();
             Whale=Create<Actor>("ghost-whale",spawn.x,spawn.y,48,48);Whale.halfX=18;Whale.halfY=18;
-            Burst(Whale.x,Whale.y,0xff5976);
+            Burst(Whale.x,Whale.y,0xff5976);SummonFish();
+        }
+        void SummonFish()
+        {
+            if(!FishCurse || Whale==null || fishSummoned)return;
+            fishSummoned=true;
+            // Three finite, capturable helpers. Repeated pickups cannot multiply them.
+            for(int i=0;i<3;i++)
+            {
+                var fish=Create<Enemy>("fish-minion",Clamp(Whale.x+(i-1)*34,48,464),Clamp(Whale.y+38,60,380),28,24);
+                fish.kind="whale_fish";fish.behavior="chase";fish.normalArt=fish.art;
+                Enemies.Add(fish);Burst(fish.x,fish.y,0x65dfdf);
+            }
         }
         void UpdateWhale(float dt)
         {

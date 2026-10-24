@@ -1,7 +1,7 @@
 {
   "$schemaVersion": 1,
   "id": "stage-06-deep-sea-temple",
-  "title": "심해 신전",
+  "title": "시원한 수박 코너",
   "privateLocalPrototype": true,
   "logicalSize": {
     "width": 256,
@@ -9,14 +9,14 @@
   },
   "tileSize": 16,
   "theme": {
-    "background": "deep_sea_temple",
+    "background": "watermelon",
     "music": "moonlight_bubble_march",
     "palette": [
-      "#071d35",
-      "#126b78",
-      "#35b9b2",
-      "#70d8e8",
-      "#d5fff8"
+      "#18392c",
+      "#47966b",
+      "#ef6376",
+      "#9cdd90",
+      "#ffe5ab"
     ]
   },
   "legend": {

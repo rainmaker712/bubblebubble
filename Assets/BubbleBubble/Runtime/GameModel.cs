@@ -105,7 +105,7 @@ namespace BubbleBubble
             switch (kind) {
                 case "water": return "물방울"; case "fire": return "불꽃"; case "lightning": return "번개";
                 case "shoes": return "스피드 신발"; case "shield": return "보호 방패"; case "cloud": return "비행 구름";
-                case "rainbow": return "무지개"; case "shootingStar": return "별똥별"; case "trash": return "쓰레기통 · 위험!"; default: return kind;
+                case "rainbow": return "무지개"; case "shootingStar": return "별똥별"; case "trash": return "쓰레기통 · 위험!"; case "poop": return "똥 · 물고기 부하 주의!"; default: return kind;
             }
         }
     }

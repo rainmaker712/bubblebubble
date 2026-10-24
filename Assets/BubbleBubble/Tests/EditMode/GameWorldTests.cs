@@ -15,6 +15,58 @@ namespace BubbleBubble.Tests
             game.LoadStage(stage);
             return game;
         }
+        [Test] public void FirstSixStagesFollowTheFoodAdventure()
+        {
+            CollectionAssert.AreEqual(new[]{"tokyo_bingsu","cake","icecream","macaron","aquarium","watermelon"},
+                Stages().Take(6).Select(stage=>stage.theme.background));
+            for(int i=0;i<6;i++)
+            {
+                var g=Game(1,i);var bubble=g.Shoot(g.Players[0]);g.Capture(bubble,g.Enemies[0]);g.Pop(bubble);
+                Assert.AreEqual("theme-food-"+i,g.Drops.First(d=>!d.letter).art);
+            }
+        }
+        static void Pickup(GameWorld g,string kind)
+        {
+            var p=g.Players[0];p.invulnerable=1000;
+            g.Items.Add(new Drop{kind=kind,power=true,x=p.x,y=p.y,originY=p.y});
+            g.Tick(.01f,new PlayerInput[2]);
+        }
+        [Test] public void PoopWaitsForWhaleThenSummonsThreeCapturableFish()
+        {
+            var g=Game();int score=g.Score;float time=g.TimeLeft;
+            Pickup(g,"poop");Assert.IsTrue(g.FishCurse);Assert.IsNull(g.Whale);
+            Assert.AreEqual(score,g.Score);Assert.Greater(g.TimeLeft,time-.1f);
+            Assert.AreEqual(0,g.Enemies.Count(e=>e.kind=="whale_fish"));
+            SafeAdvance(g,g.TimeLeft+1);
+            Assert.IsNotNull(g.Whale);Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
+            var fish=g.Enemies.First(e=>e.kind=="whale_fish");
+            var b=g.Shoot(g.Players[0]);g.Capture(b,fish);Assert.IsTrue(fish.captured);
+            g.Release(b);Assert.IsFalse(fish.captured);b=g.Shoot(g.Players[0]);g.Capture(b,fish);g.Pop(b);
+            Assert.IsTrue(fish.defeated);
+        }
+        [Test] public void PoopWorksBeforeOrAfterTrashOnRegularAndBossStagesWithoutDuplicates()
+        {
+            foreach(int stage in new[]{0,9})foreach(bool poopFirst in new[]{true,false})
+            {
+                var g=Game(2,stage);
+                Pickup(g,poopFirst?"poop":"trash");Pickup(g,poopFirst?"trash":"poop");
+                Assert.IsNotNull(g.Whale);Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
+                Pickup(g,"poop");Pickup(g,"trash");Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
+                Assert.AreEqual(0,g.Score);
+                var fish=g.Enemies.First(e=>e.kind=="whale_fish");float x=fish.x,y=fish.y;
+                g.Tick(.04f,new PlayerInput[2]);Assert.IsTrue(x!=fish.x || y!=fish.y);
+                g.LoadStage(2);Assert.IsFalse(g.FishCurse);Assert.IsNull(g.Whale);
+                Assert.IsFalse(g.Enemies.Any(e=>e.kind=="whale_fish"));
+            }
+        }
+        [Test] public void FishCurseSurvivesLifeLossAndContinueButResetsOnNewGame()
+        {
+            var g=Game();Pickup(g,"poop");var p=g.Players[0];
+            for(int i=0;i<3;i++){p.invulnerable=0;g.Hurt(p);}
+            g.Tick(.01f,new PlayerInput[2]);g.Continue();Assert.IsTrue(g.FishCurse);
+            Pickup(g,"trash");Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
+            g.Start(1);Assert.IsFalse(g.FishCurse);
+        }
         [Test] public void TenStagesHaveArtCharactersAndCappedPowerups()
         {
             var stages = Stages();
@@ -152,7 +204,7 @@ namespace BubbleBubble.Tests
                 var g=new GameWorld(Stages(),seed);g.Start(1);SafeAdvance(g,25);
                 foreach(var item in g.Items){kinds.Add(item.kind);positions.Add(item.x+","+item.originY);}
             }
-            Assert.IsTrue(kinds.Contains("trash"));Assert.IsTrue(kinds.Contains("shootingStar"));
+            Assert.IsTrue(kinds.Contains("trash"));Assert.IsTrue(kinds.Contains("shootingStar"));Assert.IsTrue(kinds.Contains("poop"));
             Assert.Greater(kinds.Count,4);Assert.Greater(positions.Count,4);
         }
         [Test] public void TrashSummonsOneWhaleImmediatelyWithoutScoreOrTimerLoss()
