@@ -18,12 +18,17 @@ namespace BubbleBubble
         Material rainbowMaterial, defaultMaterial;
         MaterialPropertyBlock rainbowProperties;
         MoonlightAudio music;
+        AudioSource storyVoice;
+        readonly AudioClip[] storyVoices = new AudioClip[3];
         Font font;
         GUIStyle text, title, small, button;
         Texture2D white;
         float accumulator;
         int drawnStage = -1;
         bool stylesReady;
+        bool showingStory;
+        int selectedPlayers = 1, storyPage;
+        int storyVoicePage = -1;
         static readonly Color Cream = new Color(1,.96f,.75f), Pink = new Color(1,.48f,.68f);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -50,6 +55,8 @@ namespace BubbleBubble
             defaultMaterial = new Material(Shader.Find("Sprites/Default"));
             rainbowMaterial = new Material(Resources.Load<Shader>("Rainbow")); rainbowProperties = new MaterialPropertyBlock();
             music = gameObject.AddComponent<MoonlightAudio>();
+            storyVoice = gameObject.AddComponent<AudioSource>();storyVoice.playOnAwake=false;storyVoice.volume=1f;
+            for(int i=0;i<storyVoices.Length;i++)storyVoices[i]=Resources.Load<AudioClip>($"Audio/story-{i+1:00}");
             DrawStage();
         }
         void Update()
@@ -61,8 +68,16 @@ namespace BubbleBubble
             if(World.Phase == GamePhase.Continue && Input.GetKeyDown(KeyCode.C))World.Continue();
             if(World.Phase == GamePhase.Menu || World.Phase == GamePhase.Victory || World.Phase == GamePhase.GameOver)
             {
-                if(Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Return))Begin(1);
-                if(Input.GetKeyDown(KeyCode.Alpha2))Begin(2);
+                if(showingStory)
+                {
+                    if(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))AdvanceStory();
+                    if(Input.GetKeyDown(KeyCode.Backspace))storyPage=Math.Max(0,storyPage-1);
+                }
+                else
+                {
+                    if(Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Return))OpenStory(1);
+                    if(Input.GetKeyDown(KeyCode.Alpha2))OpenStory(2);
+                }
             }
             ReadInput(0,KeyCode.A,KeyCode.D,KeyCode.W,KeyCode.F);
             ReadInput(1,KeyCode.LeftArrow,KeyCode.RightArrow,KeyCode.UpArrow,KeyCode.Period);
@@ -82,6 +97,12 @@ namespace BubbleBubble
             inputs[i].jumpPressed |= Input.GetKeyDown(jump);inputs[i].jumpHeld = Input.GetKey(jump);inputs[i].fire = Input.GetKey(fire);
         }
         public void Begin(int count) { World.Start(count);DrawStage();accumulator=0; }
+        void OpenStory(int count) { selectedPlayers=count;storyPage=0;storyVoicePage=-1;showingStory=true; }
+        void AdvanceStory()
+        {
+            if(storyPage<2)storyPage++;
+            else { showingStory=false;storyVoice.Stop();storyVoicePage=-1;Begin(selectedPlayers); }
+        }
         void OnApplicationFocus(bool focus) { if(!focus && World != null && World.Phase == GamePhase.Playing)World.TogglePause(); }
         Sprite Art(string name)
         {
@@ -192,7 +213,8 @@ namespace BubbleBubble
                 }
                 if(World.NoticeTime>0) { Box(new Rect(38,371,436,30),new Color(.08f,.06f,.16f,.9f));Center(371,World.Notice,12); }
             }
-            if(World.Phase==GamePhase.Menu || World.Phase==GamePhase.Victory || World.Phase==GamePhase.GameOver)Menu();
+            if(showingStory)Story();
+            else if(World.Phase==GamePhase.Menu || World.Phase==GamePhase.Victory || World.Phase==GamePhase.GameOver)Menu();
             else if(World.Phase==GamePhase.Paused)
             {
                 Panel();Center(135,"잠깐 쉬어가기",24);Center(180,"Esc를 누르면 계속합니다",12);
@@ -215,14 +237,59 @@ namespace BubbleBubble
             Center(109,World.Phase==GamePhase.Victory?"모든 스테이지 클리어!":World.Phase==GamePhase.GameOver?"다시 도전해 볼까요?":"낙콩 & 무닝의 달빛 모험",15);
             if(World.Phase!=GamePhase.Menu)Center(140,$"최종 점수 {World.Score:N0}",13);
             DrawPortrait("nakkong",166,157);DrawPortrait("muning",294,157);
-            if(GUI.Button(new Rect(64,224,182,42),"1 · 낙콩 혼자 하기",button))Begin(1);
-            if(GUI.Button(new Rect(266,224,182,42),"2 · 둘이서 하기",button))Begin(2);
+            if(GUI.Button(new Rect(64,224,182,42),"1 · 낙콩 혼자 하기",button))OpenStory(1);
+            if(GUI.Button(new Rect(266,224,182,42),"2 · 둘이서 하기",button))OpenStory(2);
             Center(276,"1P  A / D 이동 · W 점프 · F 거품",12);
             Center(300,"2P  ← / → 이동 · ↑ 점프 · . 거품",12);
             Center(332,"아이템은 랜덤 등장 · 효과는 이번 스테이지까지",10);
             Center(353,"쓰레기통은 피하세요! · 마지막 10탄은 랜덤 보스",10);
             Center(375,"Esc 일시정지 · C 이어하기 · M 음악",10);
         }
+        void Story()
+        {
+            if(storyVoicePage!=storyPage)
+            {
+                storyVoice.Stop();storyVoicePage=storyPage;
+                if(storyVoices[storyPage]!=null) { storyVoice.clip=storyVoices[storyPage];storyVoice.Play(); }
+            }
+            Box(new Rect(28,45,456,360),new Color(.055f,.04f,.13f,.98f));
+            Center(56,"낙콩 & 무닝의 냉장고",19);
+            Box(new Rect(72,91,368,174),new Color(.11f,.16f,.27f));
+            // A bright, pixel-art fridge scene composed from the game's existing food and character sprites.
+            Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
+            Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
+            Box(new Rect(259,146,120,3),new Color(.66f,.82f,.88f));
+            Box(new Rect(259,188,120,3),new Color(.66f,.82f,.88f));
+            Box(new Rect(259,225,120,3),new Color(.66f,.82f,.88f));
+            if(storyPage==0)
+            {
+                DrawStoryFood("apple",274,120);DrawStoryFood("banana",320,120);DrawStoryFood("grapes",360,120);
+                DrawStoryFood("strawberry",277,158);DrawStoryFood("cherries",320,158);DrawStoryFood("cookie",358,158);
+                DrawStoryFood("apple",279,198);DrawStoryFood("banana",329,198);DrawStoryFood("cookie",365,198);
+                Center(274,"냉장고에는 맛있는 간식이 가득했어요!",12);
+            }
+            else if(storyPage==1)
+            {
+                DrawStoryFood("cookie",313,197);
+                Center(274,"그런데 어느 날, 냉장고가 텅 비었어요.",12);
+                Center(294,"쿠키 하나만 남기고 모두 사라졌죠!",12);
+            }
+            else
+            {
+                DrawPortrait("nakkong",274,169);DrawPortrait("muning",334,169);
+                Center(274,"낙콩과 무닝은 사라진 간식을 찾아",12);
+                Center(294,"보글보글 모험을 떠나기로 했어요!",12);
+            }
+            Label(88,317,80,22,$"{storyPage+1} / 3",small);
+            if(storyPage>0 && GUI.Button(new Rect(88,346,112,34),"이전",button))storyPage--;
+            if(GUI.Button(new Rect(205,346,86,34),"다시 듣기",button) && storyVoices[storyPage]!=null)
+            { storyVoice.Stop();storyVoice.clip=storyVoices[storyPage];storyVoice.Play(); }
+            var nextLabel=storyPage==2?"모험 시작!":"다음 ▶";
+            if(GUI.Button(new Rect(300,346,124,34),nextLabel,button))AdvanceStory();
+            Center(382,"Enter / Space  다음",9);
+        }
+        void DrawStoryFood(string art,float x,float y)
+        { GUI.DrawTexture(new Rect(x,y,30,29),Art(art).texture,ScaleMode.ScaleToFit,true); }
         void DrawPortrait(string art,float x,float y) { GUI.DrawTexture(new Rect(x-23,y,46,49),Art(art).texture,ScaleMode.ScaleToFit,true); }
         void OnDestroy() { if(rainbowMaterial!=null)Destroy(rainbowMaterial);if(defaultMaterial!=null)Destroy(defaultMaterial); }
     }
