@@ -1,0 +1,91 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-10-cosmic-castle",
+  "title": "최후의 왕의 성",
+  "privateLocalPrototype": true,
+  "logicalSize": {
+    "width": 256,
+    "height": 224
+  },
+  "tileSize": 16,
+  "theme": {
+    "background": "cosmic_castle",
+    "music": "moonlight_bubble_march",
+    "palette": [
+      "#090b2a",
+      "#343087",
+      "#7256d8",
+      "#cf70ef",
+      "#f7e4ff"
+    ]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#..............#",
+    "#..##......##..#",
+    "#..............#",
+    "#..............#",
+    "#.##...##...##.#",
+    "#..............#",
+    "#..............#",
+    "#...##....##...#",
+    "#..............#",
+    "#.##........##.#",
+    "#..............#",
+    "################"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "nakkong",
+      "tile": {
+        "x": 2,
+        "y": 12
+      }
+    },
+    {
+      "player": 2,
+      "character": "muning",
+      "tile": {
+        "x": 13,
+        "y": 12
+      }
+    }
+  ],
+  "enemies": [],
+  "items": [],
+  "airflow": [],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 100,
+    "enrageAtSecondsRemaining": 15,
+    "verticalWrap": false,
+    "clearWhenAllEnemiesDefeated": false,
+    "nextStageId": null,
+    "clearWhenBossDefeated": true
+  },
+  "tutorial": [
+    {
+      "trigger": "stage_start",
+      "message": "마지막 대결! 랜덤으로 등장하는 왕의 공격을 피하세요."
+    }
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 24,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
+}

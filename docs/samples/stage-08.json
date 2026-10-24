@@ -4,7 +4,7 @@
   "theme": { "background": "ice_palace", "music": "moonlight_bubble_march", "palette": ["#10243f", "#346aa0", "#72c2e8", "#b8eaff", "#f1fcff"] },
   "legend": { "#": "solid_platform", ".": "empty" },
   "layout": ["################","#..............#","#.#..##..##..#.#","#..............#","#...##....##...#","#..............#","#.##..####..##.#","#..............#","#...##....##...#","#..............#","#.###......###.#","#......##......#","#..............#","###..######..###"],
-  "playerSpawns": [{ "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 } }, { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 } }],
+  "playerSpawns": [{ "player": 1, "character": "nakkong", "tile": { "x": 2, "y": 12 } }, { "player": 2, "character": "muning", "tile": { "x": 13, "y": 12 } }],
   "enemies": [
     { "id": "g8a", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 2, "y": 10 } }, { "id": "g8b", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 13, "y": 10 } },
     { "id": "g8c", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 4, "y": 8 } }, { "id": "g8d", "kind": "ghost_bobblun", "behavior": "patrol", "tile": { "x": 11, "y": 8 } },
@@ -13,7 +13,7 @@
     { "id": "g8i", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 4, "y": 2 } }, { "id": "g8j", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 11, "y": 2 } },
     { "id": "g8k", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 8, "y": 11 } }
   ],
-  "items": [{ "id": "cloud-8", "kind": "cloud", "tile": { "x": 8, "y": 7 } }, { "id": "fire-8", "kind": "fire", "tile": { "x": 4, "y": 5 } }, { "id": "shoes-8", "kind": "shoes", "tile": { "x": 12, "y": 5 } }],
+  "items": [{"id": "cloud-8", "kind": "cloud", "tile": {"x": 8, "y": 7}}, {"id": "fire-8", "kind": "fire", "tile": {"x": 4, "y": 5}}],
   "airflow": [{ "id": "ice-cross", "tileRect": { "x": 1, "y": 1, "width": 14, "height": 12 }, "direction": { "x": -1, "y": -1 }, "bubbleSpeedMultiplier": 1.2 }],
   "rules": { "startingLives": 3, "timeLimitSeconds": 45, "enrageAtSecondsRemaining": 17, "verticalWrap": true, "clearWhenAllEnemiesDefeated": true, "nextStageId": "stage-09-volcano-core" }, "tutorial": []
 }

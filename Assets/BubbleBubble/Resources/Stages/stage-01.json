@@ -1,0 +1,117 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-01-moonlight-playground",
+  "title": "달빛 놀이터",
+  "privateLocalPrototype": true,
+  "logicalSize": {
+    "width": 256,
+    "height": 224
+  },
+  "tileSize": 16,
+  "theme": {
+    "background": "moonlight_playground",
+    "music": "placeholder_lullaby",
+    "palette": [
+      "#17152f",
+      "#632076",
+      "#ed438f",
+      "#58e5ff",
+      "#ffdc59"
+    ]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#..............#",
+    "#....##..##....#",
+    "#..............#",
+    "#..##......##..#",
+    "#..............#",
+    "#.....####.....#",
+    "#..............#",
+    "#..##......##..#",
+    "#..............#",
+    "#.##........##.#",
+    "#..............#",
+    "################"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "nakkong",
+      "tile": {
+        "x": 2,
+        "y": 12
+      },
+      "placeholderAsset": "nakkong_angel_rabbit"
+    },
+    {
+      "player": 2,
+      "character": "muning",
+      "tile": {
+        "x": 13,
+        "y": 12
+      },
+      "placeholderAsset": "muning_angel_cat"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "g10",
+      "kind": "ghost_bubblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 3,
+        "y": 8
+      }
+    },
+    {
+      "id": "g11",
+      "kind": "ghost_bobblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": "g12",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 3,
+        "y": 4
+      }
+    },
+    {
+      "id": "g13",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 12,
+        "y": 4
+      }
+    }
+  ],
+  "items": [],
+  "airflow": [],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 70,
+    "enrageAtSecondsRemaining": 30,
+    "verticalWrap": true,
+    "clearWhenAllEnemiesDefeated": true,
+    "nextStageId": "stage-02-starlight-stairs",
+    "clearWhenBossDefeated": false
+  },
+  "tutorial": [
+    {
+      "trigger": "stage_start",
+      "message": "귀신을 거품에 가두고 톡! 아이템은 게임 중 랜덤으로 등장해요."
+    }
+  ]
+}

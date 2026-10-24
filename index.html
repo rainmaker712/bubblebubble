@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="포차코와 마이멜로디의 달빛 버블 액션 게임" />
-    <title>BubbleBubble — 달빛 놀이터</title>
+    <meta name="description" content="낙콩과 무닝의 아케이드 버블 보스전" />
+    <title>BubbleBubble — 번개 왕의 성</title>
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">PRIVATE LOCAL PROTOTYPE · PHASER 4</p>
+          <p class="eyebrow">BUBBLE ARCADE · ROUND 01</p>
           <h1>Bubble<span>Bubble</span></h1>
-          <p class="subtitle">포차코와 마이멜로디의 달빛 놀이터</p>
+          <p class="subtitle">낙콩과 무닝의 번개 왕의 성</p>
         </div>
         <button id="music-toggle" class="sound-button" type="button" aria-pressed="true">♪ 음악 켜짐</button>
       </header>
@@ -22,10 +22,10 @@
         <div id="overlay" class="overlay">
           <div class="panel">
             <p id="result-label" class="result-label">STAGE 01</p>
-            <h2 id="overlay-title">달빛 놀이터</h2>
-            <p id="overlay-copy">전진하는 거품을 공룡 귀신에게 직접 맞힌 뒤 몸으로 톡 터뜨려 주세요.</p>
+            <h2 id="overlay-title">번개 왕의 성</h2>
+            <p id="overlay-copy">첫 판부터 왕에게 도전! 불·번개 아이템을 먹고 공격 키를 누르고 있으면 연사합니다. 낙뢰 경고를 피해 왕의 체력을 모두 깎아 주세요.</p>
             <div class="actions">
-              <button id="one-player" type="button" disabled>포차코로 시작</button>
+              <button id="one-player" type="button" disabled>낙콩로 시작</button>
               <button id="two-player" type="button" disabled>둘이서 시작</button>
             </div>
           </div>
@@ -33,16 +33,16 @@
       </section>
 
       <section class="controls" aria-label="조작법">
-        <article class="control-card pochacco-card">
-          <div class="avatar dog" aria-hidden="true"><i></i></div>
-          <div><h2>포차코 · 1P</h2><p><kbd>A</kbd><kbd>D</kbd> 이동 · <kbd>W</kbd> 점프 · <kbd>F</kbd> 거품</p></div>
+        <article class="control-card nakkong-card">
+          <canvas class="avatar" data-character="nakkong" width="76" height="80" aria-hidden="true"></canvas>
+          <div><h2>낙콩 · 1P</h2><p><kbd>A</kbd><kbd>D</kbd> 이동 · <kbd>W</kbd> 점프 · <kbd>F</kbd> 공격</p></div>
         </article>
         <article class="control-card melody-card">
-          <div class="avatar rabbit" aria-hidden="true"><i></i></div>
-          <div><h2>마이멜로디 · 2P</h2><p><kbd>←</kbd><kbd>→</kbd> 이동 · <kbd>↑</kbd> 점프 · <kbd>/</kbd> 또는 <kbd>Enter</kbd> 거품</p></div>
+          <canvas class="avatar" data-character="muning" width="76" height="80" aria-hidden="true"></canvas>
+          <div><h2>무닝 · 2P</h2><p><kbd>←</kbd><kbd>→</kbd> 이동 · <kbd>↑</kbd> 점프 · <kbd>.</kbd> 공격</p></div>
         </article>
       </section>
-      <p class="hint"><kbd>Esc</kbd> 일시정지 · <kbd>C</kbd> 생명 소진 후 이어하기 · 바닥 구멍은 화면 위로 이어져요.</p>
+      <p class="hint"><kbd>Esc</kbd> 일시정지 · <kbd>C</kbd> 생명 소진 후 이어하기 · 불·번개로 왕에게 공격 · 아이템은 목숨을 잃기 전까지 유지 · 무지개 거품과 충돌 10회 보호 · 별똥별은 발사 시 적 하나 제거 · 특수 아이템은 스테이지당 최대 2개.</p>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

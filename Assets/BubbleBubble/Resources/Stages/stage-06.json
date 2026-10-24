@@ -1,0 +1,178 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-06-deep-sea-temple",
+  "title": "심해 신전",
+  "privateLocalPrototype": true,
+  "logicalSize": {
+    "width": 256,
+    "height": 224
+  },
+  "tileSize": 16,
+  "theme": {
+    "background": "deep_sea_temple",
+    "music": "moonlight_bubble_march",
+    "palette": [
+      "#071d35",
+      "#126b78",
+      "#35b9b2",
+      "#70d8e8",
+      "#d5fff8"
+    ]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#..###....###..#",
+    "#..............#",
+    "#.##....##....##",
+    "#..............#",
+    "#....######....#",
+    "#..............#",
+    "##....##....##.#",
+    "#..............#",
+    "#..##......##..#",
+    "#......##......#",
+    "#..............#",
+    "###..######..###"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "nakkong",
+      "tile": {
+        "x": 2,
+        "y": 12
+      }
+    },
+    {
+      "player": 2,
+      "character": "muning",
+      "tile": {
+        "x": 13,
+        "y": 12
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "id": "g6a",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 2,
+        "y": 10
+      }
+    },
+    {
+      "id": "g6b",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 13,
+        "y": 10
+      }
+    },
+    {
+      "id": "g6c",
+      "kind": "ghost_bubblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 5,
+        "y": 8
+      }
+    },
+    {
+      "id": "g6d",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 10,
+        "y": 8
+      }
+    },
+    {
+      "id": "g6e",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 3,
+        "y": 6
+      }
+    },
+    {
+      "id": "g6f",
+      "kind": "ghost_bobblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 12,
+        "y": 6
+      }
+    },
+    {
+      "id": "g6g",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 5,
+        "y": 3
+      }
+    },
+    {
+      "id": "g6h",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 10,
+        "y": 3
+      }
+    },
+    {
+      "id": "g6i",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 7,
+        "y": 11
+      }
+    },
+    {
+      "id": "g6j",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 9,
+        "y": 11
+      }
+    }
+  ],
+  "items": [],
+  "airflow": [
+    {
+      "id": "sea-current",
+      "tileRect": {
+        "x": 1,
+        "y": 1,
+        "width": 14,
+        "height": 12
+      },
+      "direction": {
+        "x": 1,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 1.1
+    }
+  ],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 48,
+    "enrageAtSecondsRemaining": 19,
+    "verticalWrap": true,
+    "clearWhenAllEnemiesDefeated": true,
+    "nextStageId": "stage-07-toy-factory"
+  },
+  "tutorial": []
+}

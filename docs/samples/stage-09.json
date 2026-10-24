@@ -4,7 +4,7 @@
   "theme": { "background": "volcano_core", "music": "moonlight_bubble_march", "palette": ["#250d18", "#7e241f", "#d64a25", "#ff9a36", "#ffe198"] },
   "legend": { "#": "solid_platform", ".": "empty" },
   "layout": ["################","#..............#","#..##......##..#","#......##......#","#.##........##.#","#....##..##....#","#..............#","#..###....###..#","#..............#","#.##...##...##.#","#..............#","#...##....##...#","#..............#","####...##...####"],
-  "playerSpawns": [{ "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 } }, { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 } }],
+  "playerSpawns": [{ "player": 1, "character": "nakkong", "tile": { "x": 2, "y": 12 } }, { "player": 2, "character": "muning", "tile": { "x": 13, "y": 12 } }],
   "enemies": [
     { "id": "g9a", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 2, "y": 10 } }, { "id": "g9b", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 13, "y": 10 } },
     { "id": "g9c", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 4, "y": 8 } }, { "id": "g9d", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 11, "y": 8 } },
@@ -13,7 +13,7 @@
     { "id": "g9i", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 4, "y": 2 } }, { "id": "g9j", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 11, "y": 2 } },
     { "id": "g9k", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 7, "y": 11 } }, { "id": "g9l", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 9, "y": 11 } }
   ],
-  "items": [{ "id": "cloud-9", "kind": "cloud", "tile": { "x": 8, "y": 6 } }, { "id": "water-9", "kind": "water", "tile": { "x": 4, "y": 9 } }, { "id": "shield-9", "kind": "shield", "tile": { "x": 12, "y": 9 } }],
+  "items": [{"id": "shooting-star-9", "kind": "shootingStar", "tile": {"x": 8, "y": 6}}, {"id": "water-9", "kind": "water", "tile": {"x": 4, "y": 9}}],
   "airflow": [{ "id": "hot-updraft", "tileRect": { "x": 4, "y": 1, "width": 8, "height": 12 }, "direction": { "x": 0, "y": -1 }, "bubbleSpeedMultiplier": 1.5 }],
   "rules": { "startingLives": 3, "timeLimitSeconds": 43, "enrageAtSecondsRemaining": 16, "verticalWrap": true, "clearWhenAllEnemiesDefeated": true, "nextStageId": "stage-10-cosmic-castle" }, "tutorial": []
 }

@@ -1,4 +1,5 @@
 node_modules/
+.omc/
 dist/
 .next/
 out/
@@ -18,3 +19,19 @@ __pycache__/
 # phase execution outputs
 phases/**/phase*-output.json
 phases/**/step*-output.json
+
+# Unity local imports, build output and IDE files
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uilds/
+/[Tt]est[Rr]esults/
+*.csproj
+*.sln
+*.slnx
+*.pidb
+*.booproj
+*.userprefs
+*.unitypackage

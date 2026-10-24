@@ -1,35 +1,30 @@
 #!/usr/bin/env python3
-"""BubbleBubble Phaser 개발 서버 실행기."""
-
-from __future__ import annotations
-
-import subprocess
-import threading
-import webbrowser
+"""Launch the native Unity game, or use --editor / --web explicitly."""
 from pathlib import Path
+import argparse
+import platform
+import subprocess
+import sys
 
-
-HOST = "127.0.0.1"
-PORT = 4173
 ROOT = Path(__file__).resolve().parent
 
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--editor', action='store_true')
+    group.add_argument('--web', action='store_true', help='기존 Phaser 버전 실행')
+    args = parser.parse_args()
+    if args.web:
+        subprocess.run([sys.executable, str(ROOT / 'scripts/run_web_game.py')], cwd=ROOT, check=True)
+        return
+    mac = ROOT / 'Builds/macOS/BubbleBubble.app'
+    windows = ROOT / 'Builds/Windows/BubbleBubble.exe'
+    if not args.editor and platform.system() == 'Darwin' and mac.exists():
+        subprocess.run(['open', str(mac)], check=True)
+    elif not args.editor and platform.system() == 'Windows' and windows.exists():
+        subprocess.Popen([str(windows)], cwd=ROOT)
+    else:
+        subprocess.run([sys.executable, str(ROOT / 'scripts/unity.py'), 'open'], cwd=ROOT, check=True)
 
-def main() -> None:
-    url = f"http://{HOST}:{PORT}"
-    print(f"BubbleBubble 실행 중: {url}")
-    print("종료하려면 Ctrl+C를 누르세요.")
-    process = subprocess.Popen(
-        ["npm", "run", "dev", "--", "--port", str(PORT)],
-        cwd=ROOT,
-    )
-    threading.Timer(1.2, lambda: webbrowser.open(url)).start()
-    try:
-        process.wait()
-    except KeyboardInterrupt:
-        process.terminate()
-        process.wait(timeout=5)
-        print("\n게임 서버를 종료합니다.")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

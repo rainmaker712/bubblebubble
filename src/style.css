@@ -110,15 +110,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .control-card h2 { margin: 0 0 6px; font-size: 15px; }
 .control-card p { margin: 0; color: #cfc8e8; font-size: 12px; }
 
-.avatar { position: relative; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 16px; }
-.avatar::before, .avatar::after, .avatar i { position: absolute; content: ""; display: block; }
-.avatar.dog { background: #f5f3e9; border: 2px solid #d4d0c8; }
-.avatar.dog::before, .avatar.dog::after { top: -4px; width: 11px; height: 25px; border-radius: 8px; background: #1a1724; }
-.avatar.dog::before { left: -2px; transform: rotate(16deg); }.avatar.dog::after { right: -2px; transform: rotate(-16deg); }
-.avatar.rabbit { background: #fff7f2; border: 7px solid #f4a6c6; }
-.avatar.rabbit::before, .avatar.rabbit::after { top: -20px; width: 13px; height: 28px; border-radius: 12px 12px 5px 5px; background: #f4a6c6; }
-.avatar.rabbit::before { left: 1px; transform: rotate(-9deg); }.avatar.rabbit::after { right: 1px; transform: rotate(9deg); }
-.avatar i { left: 12px; top: 19px; width: 3px; height: 3px; border-radius: 50%; background: #2d2638; box-shadow: 13px 0 #2d2638, 7px 6px 0 -1px #2d2638; }
+.avatar { flex: 0 0 48px; width: 48px; height: 51px; }
 
 kbd { display: inline-grid; min-width: 23px; height: 23px; margin: 0 2px; place-items: center; border: 1px solid #6b628d; border-bottom-width: 3px; border-radius: 5px; background: #2c2747; color: #fff; font: 800 11px ui-monospace, monospace; }
 .hint { margin: 13px 0 0; color: #9991bb; text-align: center; font-size: 12px; }
@@ -129,3 +121,14 @@ kbd { display: inline-grid; min-width: 23px; height: 23px; margin: 0 2px; place-
   .subtitle { max-width: 230px; }
   .control-card { padding: 11px 13px; }
 }
+
+/* Arcade frame: sharp borders and luminous colors echo the in-game pixel art. */
+:root { background: #05050d; }
+body { background: radial-gradient(ellipse at 50% 0, #291340, #080711 65%); }
+h1 { text-shadow: 3px 3px 0 #b52a82, 6px 6px 0 #351b60; }
+.cabinet { border-radius: 8px; border-color: #db458e; background: #180e27; box-shadow: 0 0 0 3px #331b4c, 0 24px 60px #0009; }
+.game-root, .overlay { border-radius: 0; }
+.panel { border-radius: 3px; border: 3px solid #ffe05d; background: #140c24; box-shadow: 6px 6px 0 #5d255b; }
+.sound-button, .actions button, .control-card { border-radius: 3px; }
+.eyebrow { color: #62e5ff; }
+.result-label { color: #ffdf5e; }

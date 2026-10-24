@@ -24,8 +24,8 @@
     "###..######..###"
   ],
   "playerSpawns": [
-    { "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 }, "placeholderAsset": "white_dog_shape" },
-    { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 }, "placeholderAsset": "pink_rabbit_shape" }
+    { "player": 1, "character": "nakkong", "tile": { "x": 2, "y": 12 }, "placeholderAsset": "nakkong_angel_rabbit" },
+    { "player": 2, "character": "muning", "tile": { "x": 13, "y": 12 }, "placeholderAsset": "muning_angel_cat" }
   ],
   "enemies": [
     { "id": "ghost-4a", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 3, "y": 10 } },
@@ -38,11 +38,7 @@
     { "id": "ghost-4h", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 10, "y": 3 } },
     { "id": "ghost-4i", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 8, "y": 6 } }
   ],
-  "items": [
-    { "id": "water-bubble-4", "kind": "water", "tile": { "x": 4, "y": 8 } },
-    { "id": "fire-bubble-4", "kind": "fire", "tile": { "x": 11, "y": 8 } },
-    { "id": "shield-4", "kind": "shield", "tile": { "x": 8, "y": 4 } }
-  ],
+  "items": [{"id": "shooting-star-4", "kind": "shootingStar", "tile": {"x": 4, "y": 8}}, {"id": "rainbow-4", "kind": "rainbow", "tile": {"x": 8, "y": 4}}],
   "airflow": [
     { "id": "candy-center", "tileRect": { "x": 6, "y": 1, "width": 4, "height": 12 }, "direction": { "x": 0, "y": -1 }, "bubbleSpeedMultiplier": 1.2 },
     { "id": "candy-swirl", "tileRect": { "x": 1, "y": 2, "width": 14, "height": 8 }, "direction": { "x": -1, "y": -1 }, "bubbleSpeedMultiplier": 0.8 }

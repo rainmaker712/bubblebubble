@@ -1,3 +1,4 @@
+import { drawCharacter } from './game/characters';
 import Phaser from 'phaser';
 import './style.css';
 import { GameScene } from './game/GameScene';
@@ -53,8 +54,14 @@ document.addEventListener('bubblebubble-result', (event) => {
   const { cleared, score } = (event as CustomEvent<{ cleared: boolean; score: number }>).detail;
   overlay.hidden = false;
   label.textContent = cleared ? 'STAGE CLEAR!' : 'TRY AGAIN';
-  title.textContent = cleared ? '모든 스테이지 클리어!' : '공룡 귀신이 남아 있어요';
-  copy.textContent = cleared ? `점수 ${score}점 · 다시 한 번 놀아볼까요?` : '거품을 맞혀 가둔 뒤, 갇힌 거품에 몸으로 닿아 보세요.';
-  onePlayer.textContent = '포차코로 다시 하기';
+  title.textContent = cleared ? '모든 스테이지 클리어!' : '다시 도전해 볼까요?';
+  copy.textContent = cleared ? `점수 ${score}점 · 다시 한 번 놀아볼까요?` : '첫 스테이지는 보스전! 불·번개 아이템을 먹고 공격 키를 누르고 있어 보세요.';
+  onePlayer.textContent = '낙콩로 다시 하기';
   twoPlayer.textContent = '둘이서 다시 하기';
 });
+
+for (const character of ['nakkong', 'muning'] as const) {
+  const canvas = document.querySelector<HTMLCanvasElement>(`[data-character="${character}"]`);
+  const context = canvas?.getContext('2d');
+  if (context) { context.scale(2, 2); drawCharacter(context, character); }
+}

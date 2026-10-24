@@ -1,0 +1,203 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-03-ghost-tower",
+  "title": "유령 탑",
+  "privateLocalPrototype": true,
+  "logicalSize": {
+    "width": 256,
+    "height": 224
+  },
+  "tileSize": 16,
+  "theme": {
+    "background": "ghost_tower",
+    "music": "moonlight_bubble_march",
+    "palette": [
+      "#100d27",
+      "#805db8",
+      "#ff98c2",
+      "#bcecff",
+      "#ffe58f"
+    ]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#.#..##..##..#.#",
+    "#..............#",
+    "#...##....##...#",
+    "#..............#",
+    "#.##...##...##.#",
+    "#..............#",
+    "#....##..##....#",
+    "#..............#",
+    "#..##......##..#",
+    "#......##......#",
+    "#..............#",
+    "####...##...####"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "nakkong",
+      "tile": {
+        "x": 2,
+        "y": 12
+      },
+      "placeholderAsset": "nakkong_angel_rabbit"
+    },
+    {
+      "player": 2,
+      "character": "muning",
+      "tile": {
+        "x": 13,
+        "y": 12
+      },
+      "placeholderAsset": "muning_angel_cat"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "ghost-bubblun-3a",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 3,
+        "y": 9
+      },
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bubblun-3b",
+      "kind": "ghost_bubblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 11,
+        "y": 9
+      },
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-3a",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 6,
+        "y": 5
+      },
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-3b",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 10,
+        "y": 3
+      },
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bubblun-3c",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 2,
+        "y": 7
+      },
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-3c",
+      "kind": "ghost_bobblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 13,
+        "y": 7
+      },
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bubblun-3d",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 5,
+        "y": 11
+      },
+      "placeholderAsset": "green_dinosaur_ghost_shape"
+    },
+    {
+      "id": "ghost-bobblun-3d",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 9,
+        "y": 11
+      },
+      "placeholderAsset": "blue_dinosaur_ghost_shape"
+    }
+  ],
+  "items": [],
+  "airflow": [
+    {
+      "id": "tower-updraft",
+      "tileRect": {
+        "x": 6,
+        "y": 1,
+        "width": 4,
+        "height": 12
+      },
+      "direction": {
+        "x": 0,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 1.2
+    },
+    {
+      "id": "left-crosswind",
+      "tileRect": {
+        "x": 1,
+        "y": 2,
+        "width": 5,
+        "height": 9
+      },
+      "direction": {
+        "x": -1,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 0.8
+    },
+    {
+      "id": "right-crosswind",
+      "tileRect": {
+        "x": 10,
+        "y": 2,
+        "width": 5,
+        "height": 9
+      },
+      "direction": {
+        "x": 1,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 0.8
+    }
+  ],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 60,
+    "enrageAtSecondsRemaining": 25,
+    "verticalWrap": true,
+    "clearWhenAllEnemiesDefeated": true,
+    "nextStageId": "stage-04-candy-cavern"
+  },
+  "tutorial": [
+    {
+      "trigger": "stage_start",
+      "message": "과일과 간식을 모아 크게 성장하세요!"
+    }
+  ]
+}

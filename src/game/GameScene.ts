@@ -1,3 +1,6 @@
+import { drawArcadeArt } from './arcadeArt';
+import { drawCharacter } from './characters';
+import { bossDamage, bossPhase, canClearStage, decideEnemy, rainbowContacts } from './rules';
 import Phaser from 'phaser';
 import stage01 from '../../docs/samples/stage-01.json';
 import stage02 from '../../docs/samples/stage-02.json';
@@ -9,7 +12,7 @@ import stage07 from '../../docs/samples/stage-07.json';
 import stage08 from '../../docs/samples/stage-08.json';
 import stage09 from '../../docs/samples/stage-09.json';
 import stage10 from '../../docs/samples/stage-10.json';
-import type { BubbleState, BubbleElementKind, Character, ElementItemState, ElementKind, EnemyState, ExitLetter, GhostKind, LetterItemState, PickupKind, PickupState, PlayerState, StageData, WhaleState } from './types';
+import type { BossState, BossHazard, BubbleState, BubbleElementKind, Character, ElementItemState, ElementKind, EnemyState, ExitLetter, GhostKind, LetterItemState, PickupKind, PickupState, PlayerState, PlayerProgress, StageData, WhaleState } from './types';
 
 const stages = [stage01, stage02, stage03, stage04, stage05, stage06, stage07, stage08, stage09, stage10] as StageData[];
 const TILE = 32;
@@ -21,7 +24,6 @@ type ControlSet = {
   right: Phaser.Input.Keyboard.Key;
   jump: Phaser.Input.Keyboard.Key;
   fire: Phaser.Input.Keyboard.Key;
-  fireAlt?: Phaser.Input.Keyboard.Key;
 };
 
 export class GameScene extends Phaser.Scene {
@@ -33,6 +35,8 @@ export class GameScene extends Phaser.Scene {
   private elementItems: ElementItemState[] = [];
   private letterItems: LetterItemState[] = [];
   private whale?: WhaleState;
+  private boss?: BossState;
+  private bossHazards: BossHazard[] = [];
   private backdrop?: Phaser.GameObjects.Container;
   private dangerOverlay?: Phaser.GameObjects.Rectangle;
   private controls: ControlSet[] = [];
@@ -49,7 +53,8 @@ export class GameScene extends Phaser.Scene {
   private stageIndex = 0;
   private playerCount: 1 | 2 = 1;
   private currentStage = stages[0];
-  private playerProgress: Array<{ lives: number }> = [];
+  private playerProgress: Array<Partial<PlayerProgress> & { lives: number }> = [];
+  private starEffects: Phaser.GameObjects.Sprite[] = [];
   private exitLetters = new Set<ExitLetter>();
   private nextExitLetter = 0;
   private exitBonusTriggered = false;
@@ -85,8 +90,9 @@ export class GameScene extends Phaser.Scene {
     this.buildPlatforms();
     this.timeLeft = this.currentStage.rules.timeLimitSeconds;
     this.players = this.currentStage.playerSpawns.slice(0, this.playerCount).map((spawn, playerIndex) => this.spawnPlayer(spawn.character, playerIndex, spawn.tile.x, spawn.tile.y));
-    this.enemies = this.currentStage.enemies.map((enemy) => this.spawnEnemy(enemy.kind, enemy.behavior, enemy.tile.x, enemy.tile.y));
-    this.elementItems = this.currentStage.items.map((item) => this.spawnElementItem(item.kind, item.tile.x, item.tile.y));
+    this.enemies = this.currentStage.enemies.map((enemy, enemyIndex) => this.spawnEnemy(enemy.kind, enemy.behavior, enemy.tile.x, enemy.tile.y, enemyIndex));
+    this.elementItems = this.currentStage.items.slice(0, 2).map((item) => this.spawnElementItem(item.kind, item.tile.x, item.tile.y));
+    this.spawnBoss();
     this.exitLetters.clear();
     this.nextExitLetter = 0;
     this.exitBonusTriggered = false;
@@ -106,7 +112,7 @@ export class GameScene extends Phaser.Scene {
     this.playing = true;
     this.paused = false;
     this.physics.resume();
-    this.showNotice(`STAGE ${index + 1} · ${this.currentStage.title}`, '#fff5b8', 1700);
+    this.showNotice(this.currentStage.boss ? '불·번개로 왕을 공격! 경고를 피하세요' : `STAGE ${index + 1} · ${this.currentStage.title}`, '#fff5b8', 2200);
     this.refreshHud();
   }
 
@@ -124,22 +130,126 @@ export class GameScene extends Phaser.Scene {
     this.timeLeft = Math.max(0, this.timeLeft - dt);
     this.players.forEach((player) => this.updatePlayer(player, dt));
     this.enemies.forEach((enemy) => this.updateEnemy(enemy));
+    this.updateBoss(dt);
+    this.updateBossHazards(dt);
     this.updateWhale();
     this.bubbles.forEach((bubble) => this.updateBubble(bubble));
     this.updateCollectibles();
     this.checkInteractions();
     this.cleanup();
     this.refreshHud();
-    if (!this.exitBonusTriggered && this.enemies.every((enemy) => enemy.defeated) && this.pickups.every((pickup) => pickup.collected)) this.completeStage();
+    if (!this.exitBonusTriggered && canClearStage(Boolean(this.currentStage.boss), this.boss?.hp ?? 1, this.enemies.every((enemy) => enemy.defeated), this.pickups.every((pickup) => pickup.collected))) this.completeStage();
     else if (this.players.every((player) => player.dead)) this.offerContinue();
-    if (this.playing && this.timeLeft <= 0 && !this.dangerActive) this.startDangerMode();
+    if (this.playing && this.timeLeft <= 0 && !this.dangerActive && !this.currentStage.boss) this.startDangerMode();
+  }
+
+  private spawnBoss(): void {
+    const config = this.currentStage.boss;
+    if (!config) return;
+    const sprite = this.physics.add.sprite(config.tile.x * TILE + 16, config.tile.y * TILE + 16, 'boss-king').setDepth(19).setDisplaySize(96, 96);
+    (sprite.body as Phaser.Physics.Arcade.Body).setAllowGravity(false).setSize(140, 144).setOffset(26, 40);
+    const maxHp = config.hp + (this.playerCount === 2 ? 12 : 0);
+    const hud = this.add.container(256, 50).setDepth(42);
+    const track = this.add.rectangle(0, 12, 224, 8, 0x29152d).setStrokeStyle(1, 0xffdc59);
+    const healthFill = this.add.rectangle(-110, 12, 220, 4, 0xff5b94).setOrigin(0, 0.5);
+    const label = this.add.text(0, -6, '', { fontFamily: 'monospace', fontSize: '11px', color: '#ffdc59' }).setOrigin(0.5);
+    hud.add([track, healthFill, label]);
+    this.boss = { sprite, hp: maxHp, maxHp, elapsed: 0, attackIn: 3, attackIndex: 0, hurtFor: 0, hud, healthFill, label };
+  }
+
+  private updateBoss(dt: number): void {
+    const boss = this.boss;
+    if (!boss || boss.hp <= 0) return;
+    boss.elapsed += dt;
+    boss.hurtFor = Math.max(0, boss.hurtFor - dt);
+    const phase = bossPhase(boss.hp, boss.maxHp);
+    const x = 256 + Math.sin(boss.elapsed * (phase === 2 ? .8 : .55)) * 125;
+    const y = 254 + Math.sin(boss.elapsed * 1.2) * 34;
+    boss.sprite.setPosition(x, y).setFlipX(Math.cos(boss.elapsed * .55) < 0);
+    boss.sprite.setTint(boss.hurtFor > 0 ? 0xffaaa8 : phase === 2 ? 0xffd4e6 : 0xffffff);
+    boss.healthFill.width = 220 * boss.hp / boss.maxHp;
+    boss.label.setText(`번개 왕 · ${boss.hp}/${boss.maxHp} · ${phase === 2 ? '분노' : 'BOSS'}`);
+    boss.attackIn -= dt;
+    if (boss.attackIn > 0) return;
+    const target = this.nearestPlayer(x);
+    if (!target) return;
+    if (boss.attackIndex % 2 === 0) {
+      const columns = [target.sprite.x];
+      if (phase === 2) columns.push(Phaser.Math.Clamp(target.sprite.x + (target.sprite.x < 256 ? 80 : -80), 52, 460));
+      for (const column of columns) this.spawnBossHazard('lightning', column, 245, 0, 0);
+    } else {
+      const angle = Math.atan2(target.sprite.y - y, target.sprite.x - x);
+      const speed = phase === 2 ? 145 : 110;
+      for (const spread of [-.3, 0, .3]) this.spawnBossHazard('fire', x, y + 22, Math.cos(angle + spread) * speed, Math.sin(angle + spread) * speed);
+    }
+    boss.attackIndex += 1;
+    boss.attackIn = this.timeLeft <= 0 ? 1.7 : phase === 2 ? 2.2 : 3.1;
+  }
+
+  private spawnBossHazard(kind: 'fire' | 'lightning', x: number, y: number, vx: number, vy: number): void {
+    const lightning = kind === 'lightning';
+    const sprite = this.physics.add.sprite(x, y, lightning ? 'boss-lightning' : 'boss-fire').setDepth(23).setVisible(false);
+    sprite.setDisplaySize(lightning ? 22 : 22, lightning ? 332 : 26);
+    const body = sprite.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.enable = false;
+    const warning = this.add.rectangle(x, lightning ? 245 : y, lightning ? 30 : 36, lightning ? 332 : 36, lightning ? 0xffde5a : 0xff6544, .16).setStrokeStyle(2, lightning ? 0xffde5a : 0xff6544, .8).setDepth(16);
+    const warningLabel = this.add.text(x, lightning ? 391 : y - 22, lightning ? '⚡ 주의' : '불꽃!', { fontFamily: 'sans-serif', fontSize: '10px', color: '#ffdf65', backgroundColor: '#160c1f' }).setOrigin(.5).setDepth(24);
+    this.bossHazards.push({ sprite, kind, warning, warningLabel, delay: lightning ? 1 : .7, life: lightning ? .45 : 4, vx, vy, launched: false });
+  }
+
+  private updateBossHazards(dt: number): void {
+    for (const hazard of this.bossHazards) {
+      if (!hazard.sprite.active) continue;
+      let activeDt = dt;
+      if (!hazard.launched) {
+        hazard.delay -= dt;
+        hazard.warning.setAlpha(.5 + .5 * Math.abs(Math.sin(hazard.delay * 12)));
+        if (hazard.delay > 0) continue;
+        activeDt = -hazard.delay;
+        hazard.launched = true;
+        hazard.warning.destroy(); hazard.warningLabel.destroy();
+        hazard.sprite.setVisible(true);
+        const body = hazard.sprite.body as Phaser.Physics.Arcade.Body;
+        body.enable = true; body.reset(hazard.sprite.x, hazard.sprite.y); body.setVelocity(hazard.vx, hazard.vy);
+      }
+      hazard.life -= activeDt;
+      if (hazard.life <= 0 || hazard.sprite.x < 25 || hazard.sprite.x > WIDTH - 25 || hazard.sprite.y > HEIGHT - 22 || hazard.sprite.y < 34) hazard.sprite.destroy();
+    }
+    this.bossHazards = this.bossHazards.filter(hazard => hazard.sprite.active);
+  }
+
+  private hitBoss(bubble: BubbleState): void {
+    const boss = this.boss;
+    if (!boss || boss.hp <= 0) return;
+    this.destroyBubble(bubble);
+    boss.hp = Math.max(0, boss.hp - bossDamage(bubble.element));
+    boss.hurtFor = .12;
+    this.burst(boss.sprite.x, boss.sprite.y, bubble.element === 'fire' ? 0xff8844 : 0xffee77, 12);
+    boss.healthFill.width = 220 * boss.hp / boss.maxHp;
+    boss.label.setText(`번개 왕 · ${boss.hp}/${boss.maxHp}`);
+    if (boss.hp > 0) return;
+    this.score += 5000;
+    this.burst(boss.sprite.x, boss.sprite.y, 0xffdc59, 40);
+    boss.sprite.destroy();
+    this.clearBossHazards();
+    this.showNotice('왕을 물리쳤어요! +5000', '#ffdc59', 1100);
+  }
+
+  private clearBossHazards(): void {
+    for (const hazard of this.bossHazards) {
+      hazard.sprite.destroy();
+      if (hazard.warning.active) hazard.warning.destroy();
+      if (hazard.warningLabel.active) hazard.warningLabel.destroy();
+    }
+    this.bossHazards = [];
   }
 
   private createControls(): void {
     const keyboard = this.input.keyboard;
     if (!keyboard) throw new Error('키보드 입력을 사용할 수 없습니다.');
     const p1 = keyboard.addKeys({ left: 'A', right: 'D', jump: 'W', fire: 'F' }) as ControlSet;
-    const p2 = keyboard.addKeys({ left: 'LEFT', right: 'RIGHT', jump: 'UP', fire: 'FORWARD_SLASH', fireAlt: 'ENTER' }) as ControlSet;
+    const p2 = keyboard.addKeys({ left: 'LEFT', right: 'RIGHT', jump: 'UP', fire: 'PERIOD' }) as ControlSet;
     this.controls = [p1, p2];
     this.esc = keyboard.addKey('ESC');
     this.continueKey = keyboard.addKey('C');
@@ -149,18 +259,20 @@ export class GameScene extends Phaser.Scene {
     const x = tx * TILE + TILE / 2;
     const y = ty * TILE + TILE / 2;
     const sprite = this.physics.add.sprite(x, y, character).setDepth(20).setCollideWorldBounds(false);
-    sprite.setDisplaySize(28, character === 'my_melody' ? 36 : 34);
+    sprite.setDisplaySize(38, 40);
     sprite.setBodySize(40, 56).setBounce(0);
     sprite.setMaxVelocity(190, 440);
+    const rainbowLabel = this.add.text(x, y - 30, '', { fontFamily: 'sans-serif', fontSize: '10px', color: '#fff5b8', backgroundColor: '#17152fcc', padding: { x: 3, y: 2 } }).setOrigin(0.5).setDepth(29);
     const progress = this.playerProgress[index] ?? { lives: this.currentStage.rules.startingLives };
-    return { sprite, character, index, lives: progress.lives, facing: index === 0 ? 1 : -1, spawnX: x, spawnY: y, cooldown: 0, invulnerable: 0, dead: false, bubbleElementUntil: 0, speedUntil: 0, shieldUntil: 0, flightUntil: 0 };
+    return { sprite, character, index, facing: index === 0 ? 1 : -1, spawnX: x, spawnY: y, cooldown: 0, invulnerable: 0, dead: false, bubbleElementUntil: 0, speedUntil: 0, shieldUntil: 0, flightUntil: 0, rainbowBubbles: false, shootingStar: false, rainbowRemaining: 0, ...progress, rainbowContacts: new Set(), rainbowLabel };
   }
 
-  private spawnEnemy(kind: GhostKind, behavior: 'patrol' | 'chase', tx: number, ty: number): EnemyState {
-    const sprite = this.physics.add.sprite(tx * TILE + TILE / 2, ty * TILE + TILE / 2, `${kind}-s${this.stageIndex + 1}`).setDepth(18);
+  private spawnEnemy(kind: GhostKind, behavior: 'patrol' | 'chase', tx: number, ty: number, enemyIndex = 0): EnemyState {
+    const textureKey = `ghost_enemy-v${(enemyIndex + this.stageIndex * 2) % 8}`;
+    const sprite = this.physics.add.sprite(tx * TILE + TILE / 2, ty * TILE + TILE / 2, textureKey).setDepth(18);
     sprite.setDisplaySize(30, 34);
     sprite.setBodySize(48, 48).setBounce(0);
-    return { sprite, kind, behavior, captured: false, defeated: false, enraged: false, direction: kind === 'ghost_bubblun' ? 1 : -1 };
+    return { sprite, kind, textureKey, behavior, captured: false, defeated: false, enraged: false, direction: kind === 'ghost_bubblun' ? 1 : -1, nextDecisionAt: 0, nextJumpAt: 0 };
   }
 
   private updatePlayer(player: PlayerState, dt: number): void {
@@ -190,14 +302,20 @@ export class GameScene extends Phaser.Scene {
     player.invulnerable = Math.max(0, player.invulnerable - dt);
     if (player.bubbleElement && this.time.now >= player.bubbleElementUntil) player.bubbleElement = undefined;
     const shielded = this.time.now < player.shieldUntil;
-    if (flying) player.sprite.setTint(0xe8f8ff);
+    player.rainbowLabel.setPosition(player.sprite.x, player.sprite.y - 28).setText(player.rainbowRemaining > 0 ? `무지개 ${player.rainbowRemaining}/10` : '');
+    if (player.rainbowBubbles) {
+      const hue = (this.time.now % 1800) / 1800;
+      player.sprite.setTint(Phaser.Display.Color.HSVToRGB(hue, 0.45, 1).color, Phaser.Display.Color.HSVToRGB((hue + .25) % 1, .45, 1).color, Phaser.Display.Color.HSVToRGB((hue + .5) % 1, .45, 1).color, Phaser.Display.Color.HSVToRGB((hue + .75) % 1, .45, 1).color);
+    }
+    else if (flying) player.sprite.setTint(0xe8f8ff);
     else if (shielded) player.sprite.setTint(0x9dffcf);
     else if (speedBoosted) player.sprite.setTint(0xffe36e);
     else if (player.bubbleElement === 'water') player.sprite.setTint(0x8deaff);
+    else if (player.bubbleElement === 'lightning') player.sprite.setTint(0xffed86);
     else if (player.bubbleElement === 'fire') player.sprite.setTint(0xffa068);
     else player.sprite.clearTint();
     player.sprite.setAlpha(player.invulnerable > 0 && Math.floor(player.invulnerable * 12) % 2 === 0 ? 0.3 : 1);
-    const firePressed = Phaser.Input.Keyboard.JustDown(input.fire) || Boolean(input.fireAlt && Phaser.Input.Keyboard.JustDown(input.fireAlt));
+    const firePressed = input.fire.isDown;
     if (firePressed && player.cooldown <= 0) this.fireBubble(player);
   }
 
@@ -210,18 +328,30 @@ export class GameScene extends Phaser.Scene {
     }
     const angry = enemy.enraged || this.timeLeft <= this.currentStage.rules.enrageAtSecondsRemaining;
     const speed = angry ? 92 : 58;
-    const target = this.nearestPlayer(enemy.sprite.x);
-    if (enemy.behavior === 'chase') {
-      if (target && Math.abs(target.sprite.x - enemy.sprite.x) < 220) enemy.direction = target.sprite.x < enemy.sprite.x ? -1 : 1;
+    if (this.time.now >= enemy.nextDecisionAt) {
+      const target = this.players.filter(player => !player.dead).sort((a, b) =>
+        Phaser.Math.Distance.Between(enemy.sprite.x, enemy.sprite.y, a.sprite.x, a.sprite.y) - Phaser.Math.Distance.Between(enemy.sprite.x, enemy.sprite.y, b.sprite.x, b.sprite.y))[0];
+      const threat = this.bubbles.find(bubble => {
+        const velocity = (bubble.sprite.body as Phaser.Physics.Arcade.Body)?.velocity.x ?? 0;
+        return bubble.sprite.active && !bubble.capturedEnemy && this.time.now < bubble.driftAt &&
+          Math.abs(bubble.sprite.y - enemy.sprite.y) < 28 && Math.abs(bubble.sprite.x - enemy.sprite.x) < 100 &&
+          (enemy.sprite.x - bubble.sprite.x) * velocity > 0;
+      });
+      const decision = decideEnemy({
+        direction: enemy.direction, chase: enemy.behavior === 'chase', grounded: body.blocked.down,
+        wallLeft: body.blocked.left, wallRight: body.blocked.right,
+        floorAhead: this.isSolidAtWorld(enemy.sprite.x + enemy.direction * 22, body.bottom + 6),
+        targetDx: target ? target.sprite.x - enemy.sprite.x : undefined,
+        targetDy: target ? target.sprite.y - enemy.sprite.y : undefined,
+        targetVx: target ? (target.sprite.body as Phaser.Physics.Arcade.Body).velocity.x : 0,
+        targetRainbow: Boolean(target && target.rainbowRemaining > 0),
+        threatDx: threat ? threat.sprite.x - enemy.sprite.x : undefined,
+        canJump: this.time.now >= enemy.nextJumpAt,
+      });
+      enemy.direction = decision.direction;
+      if (decision.jump) { body.setVelocityY(-310); enemy.nextJumpAt = this.time.now + 1100; }
+      enemy.nextDecisionAt = this.time.now + (angry ? 100 : 180);
     }
-    if (body.blocked.left) enemy.direction = 1;
-    if (body.blocked.right) enemy.direction = -1;
-    const lookX = enemy.sprite.x + enemy.direction * 19;
-    const footY = enemy.sprite.y + 18;
-    const noFloorAhead = body.blocked.down && !this.isSolidAtWorld(lookX, footY);
-    const targetBelow = Boolean(target && target.sprite.y > enemy.sprite.y + 26);
-    if (noFloorAhead && !targetBelow) enemy.direction = enemy.direction === 1 ? -1 : 1;
-    if (body.blocked.down && target && target.sprite.y < enemy.sprite.y - 52 && Phaser.Math.Between(0, 100) < 2) body.setVelocityY(-290);
     body.setVelocityX(enemy.direction * speed);
     enemy.sprite.setFlipX(enemy.direction < 0);
     enemy.sprite.setTint(angry ? 0xffb2bd : 0xffffff);
@@ -263,18 +393,49 @@ export class GameScene extends Phaser.Scene {
 
   private fireBubble(player: PlayerState): void {
     player.cooldown = player.bubbleElement === 'water' ? 0.14 : 0.3;
-    const texture = player.bubbleElement === 'fire' ? 'bubble-fire' : player.bubbleElement === 'water' ? 'bubble-water' : 'bubble';
+    const texture = player.bubbleElement === 'lightning' ? 'bubble-lightning' : player.bubbleElement === 'fire' ? 'bubble-fire' : player.bubbleElement === 'water' ? 'bubble-water' : 'bubble';
     const sprite = this.physics.add.sprite(player.sprite.x + player.facing * 18, player.sprite.y - 2, texture).setDepth(15);
     const body = sprite.body as Phaser.Physics.Arcade.Body;
-    const speed = player.bubbleElement === 'fire' ? 230 : 165;
+    const speed = player.bubbleElement === 'lightning' ? 330 : player.bubbleElement === 'fire' ? 230 : 165;
     body.setAllowGravity(false).setVelocity(player.facing * speed, -8).setCircle(11);
     const now = this.time.now;
-    this.bubbles.push({ sprite, owner: player.index, bornAt: now, driftAt: now + 430, expiresAt: now + 5200, capturedAt: 0, element: player.bubbleElement });
+    this.bubbles.push({ sprite, owner: player.index, bornAt: now, driftAt: now + (player.bubbleElement === 'lightning' ? 900 : player.bubbleElement === 'fire' ? 700 : 430), expiresAt: now + 5200, capturedAt: 0, rainbow: player.rainbowBubbles, element: player.bubbleElement });
+    if (player.rainbowBubbles) this.tintRainbow(sprite);
+    if (player.shootingStar) this.fireShootingStar(player);
     this.tweens.add({ targets: sprite, scale: 1.12, duration: 440, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  }
+
+  private tintRainbow(sprite: Phaser.Physics.Arcade.Sprite): void {
+    const hue = (this.time.now % 1600) / 1600;
+    const colors = [0, .25, .5, .75].map(offset => Phaser.Display.Color.HSVToRGB((hue + offset) % 1, .65, 1).color);
+    sprite.setTint(colors[0], colors[1], colors[2], colors[3]);
+  }
+
+  private fireShootingStar(player: PlayerState): void {
+    const target = this.enemies.filter(enemy => !enemy.defeated && !enemy.captured)
+      .sort((a, b) => Phaser.Math.Distance.Between(player.sprite.x, player.sprite.y, a.sprite.x, a.sprite.y)
+        - Phaser.Math.Distance.Between(player.sprite.x, player.sprite.y, b.sprite.x, b.sprite.y))[0];
+    if (!target) return;
+    // Reserve immediately so simultaneous shots cannot take the same enemy twice.
+    target.defeated = true;
+    const { x, y } = target.sprite;
+    (target.sprite.body as Phaser.Physics.Arcade.Body).enable = false;
+    this.tweens.killTweensOf(target.sprite);
+    const star = this.add.sprite(player.sprite.x, player.sprite.y, 'shootingStar-item').setDepth(35);
+    this.starEffects.push(star);
+    this.score += 100;
+    this.spawnPickup(x, y);
+    this.maybeSpawnExitLetter(x, y - 12);
+    this.tweens.add({ targets: star, x, y, angle: 360, duration: 220, onComplete: () => {
+      this.burst(x, y, 0xffe584, 16);
+      this.tweens.add({ targets: [star, target.sprite], x: x + 100, y: -40, alpha: 0, duration: 550,
+        onComplete: () => { star.destroy(); target.sprite.destroy(); this.starEffects = this.starEffects.filter(effect => effect !== star); } });
+    } });
   }
 
   private updateBubble(bubble: BubbleState): void {
     if (!bubble.sprite.active) return;
+    if (bubble.rainbow) this.tintRainbow(bubble.sprite);
     const body = bubble.sprite.body as Phaser.Physics.Arcade.Body;
     if (this.time.now >= bubble.driftAt) {
       const wind = this.airflowAt(bubble.sprite.x, bubble.sprite.y);
@@ -297,6 +458,10 @@ export class GameScene extends Phaser.Scene {
   private checkInteractions(): void {
     for (const bubble of this.bubbles) {
       if (!bubble.sprite.active) continue;
+      if (!bubble.capturedEnemy && this.boss && this.boss.hp > 0 && this.time.now < bubble.driftAt && this.physics.overlap(bubble.sprite, this.boss.sprite)) {
+        this.hitBoss(bubble);
+        continue;
+      }
       if (!bubble.capturedEnemy) {
         for (const enemy of this.enemies) {
           const directShot = this.time.now < bubble.driftAt;
@@ -320,14 +485,27 @@ export class GameScene extends Phaser.Scene {
       }
     }
     for (const player of this.players) {
-      if (player.dead || player.invulnerable > 0) continue;
-      for (const enemy of this.enemies) {
-        if (!enemy.captured && !enemy.defeated && this.physics.overlap(player.sprite, enemy.sprite)) {
-          this.hurtPlayer(player);
-          break;
-        }
+      if (player.dead) continue;
+      const contacts = new Set(this.enemies.filter(enemy => !enemy.captured && !enemy.defeated && this.physics.overlap(player.sprite, enemy.sprite)).map(enemy => enemy.sprite));
+      if (this.boss?.sprite.active && this.boss.hp > 0 && this.physics.overlap(player.sprite, this.boss.sprite)) contacts.add(this.boss.sprite);
+      for (const hazard of this.bossHazards) {
+        if (hazard.launched && hazard.sprite.active && this.physics.overlap(player.sprite, hazard.sprite)) contacts.add(hazard.sprite);
       }
-      if (player.invulnerable <= 0 && this.whale?.sprite.active && this.physics.overlap(player.sprite, this.whale.sprite)) this.hurtPlayer(player);
+      if (this.whale?.sprite.active && this.physics.overlap(player.sprite, this.whale.sprite)) contacts.add(this.whale.sprite);
+      const rainbow = rainbowContacts(player.rainbowRemaining, player.rainbowContacts, contacts);
+      player.rainbowContacts = rainbow.contacts;
+      if (rainbow.protected) {
+        if (rainbow.remaining < player.rainbowRemaining) this.burst(player.sprite.x, player.sprite.y, 0xffc4ef, 10);
+        player.rainbowRemaining = rainbow.remaining;
+        if (rainbow.remaining === 0) {
+          player.sprite.clearTint();
+          player.rainbowLabel.setText('');
+          player.invulnerable = 0.8;
+          this.showNotice('무지개 보호 10회를 모두 사용했어요!', '#ffd9f5');
+        }
+        continue;
+      }
+      if (player.invulnerable <= 0 && contacts.size > 0) this.hurtPlayer(player);
     }
     for (const pickup of this.pickups) {
       if (pickup.collected || !pickup.sprite.active) continue;
@@ -359,9 +537,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnPickup(x: number, y: number): void {
-    const kinds: PickupKind[] = ['strawberry', 'banana', 'cookie'];
+    const kinds: PickupKind[] = ['strawberry', 'banana', 'cookie', 'apple', 'grapes', 'cherries'];
     const kind = kinds[Math.floor(this.score / 100 + this.stageIndex) % kinds.length];
-    const values: Record<PickupKind, number> = { strawberry: 250, banana: 350, cookie: 500 };
+    const values: Record<PickupKind, number> = { strawberry: 250, banana: 350, cookie: 500, apple: 300, grapes: 400, cherries: 450 };
     const spawnX = Phaser.Math.Clamp(x, 42, WIDTH - 42);
     const spawnY = Phaser.Math.Clamp(y, 58, HEIGHT - 74);
     const sprite = this.physics.add.sprite(spawnX, spawnY, kind).setDepth(27).setScale(0.35);
@@ -382,7 +560,7 @@ export class GameScene extends Phaser.Scene {
     pickup.label.destroy();
     this.score += pickup.value;
     this.burst(player.sprite.x, player.sprite.y, pickup.kind === 'strawberry' ? 0xff85a7 : pickup.kind === 'banana' ? 0xffe17a : 0xd9a46c, 18);
-    const label = pickup.kind === 'strawberry' ? '딸기' : pickup.kind === 'banana' ? '바나나' : '쿠키';
+    const label = { strawberry: '딸기', banana: '바나나', cookie: '쿠키', apple: '사과', grapes: '포도', cherries: '체리' }[pickup.kind];
     this.showNotice(`${label} +${pickup.value}`, '#fff5b8');
   }
 
@@ -392,8 +570,8 @@ export class GameScene extends Phaser.Scene {
     const sprite = this.physics.add.sprite(x, y, `${kind}-item`).setDepth(24);
     sprite.setDisplaySize(28, 32);
     (sprite.body as Phaser.Physics.Arcade.Body).setAllowGravity(false).setCircle(22, 6, 10);
-    const names: Record<ElementKind, string> = { water: '물방울', fire: '불꽃', shoes: '스피드 신발', shield: '보호 방패', cloud: '비행 구름' };
-    const colors: Record<ElementKind, string> = { water: '#9deaff', fire: '#ffc18d', shoes: '#ffe36e', shield: '#9dffcf', cloud: '#e8f8ff' };
+    const names: Record<ElementKind, string> = { water: '물방울', lightning: '번개', fire: '불꽃', shoes: '스피드 신발', shield: '보호 방패', cloud: '비행 구름', rainbow: '무지개', shootingStar: '별똥별' };
+    const colors: Record<ElementKind, string> = { water: '#9deaff', lightning: '#ffed86', fire: '#ffc18d', shoes: '#ffe36e', shield: '#9dffcf', cloud: '#e8f8ff', rainbow: '#ffc4ef', shootingStar: '#ffe584' };
     const name = names[kind];
     const label = this.add.text(x, y - 26, `SPECIAL ${name}`, {
       fontFamily: 'Arial Rounded MT Bold, sans-serif', fontSize: '9px', color: colors[kind],
@@ -407,21 +585,27 @@ export class GameScene extends Phaser.Scene {
     item.collected = true;
     item.sprite.destroy();
     item.label.destroy();
-    if (item.kind === 'water' || item.kind === 'fire') {
+    if (item.kind === 'water' || item.kind === 'fire' || item.kind === 'lightning') {
       player.bubbleElement = item.kind as BubbleElementKind;
-      player.bubbleElementUntil = this.time.now + 12_000;
+      player.bubbleElementUntil = Infinity;
     } else if (item.kind === 'shoes') {
-      player.speedUntil = this.time.now + 12_000;
+      player.speedUntil = Infinity;
     } else if (item.kind === 'shield') {
-      player.shieldUntil = this.time.now + 15_000;
+      player.shieldUntil = Infinity;
+    } else if (item.kind === 'shootingStar') {
+      player.shootingStar = true;
+    } else if (item.kind === 'rainbow') {
+      player.rainbowBubbles = true;
+      player.rainbowRemaining = 10;
+      player.rainbowContacts.clear();
     } else {
-      player.flightUntil = this.time.now + 10_000;
+      player.flightUntil = Infinity;
     }
     this.score += 750;
-    const colors: Record<ElementKind, number> = { water: 0x54d9ff, fire: 0xff8a4a, shoes: 0xffdc55, shield: 0x72e7ad, cloud: 0xdff7ff };
+    const colors: Record<ElementKind, number> = { water: 0x54d9ff, lightning: 0xffed86, fire: 0xff8a4a, shoes: 0xffdc55, shield: 0x72e7ad, cloud: 0xdff7ff, rainbow: 0xffc4ef, shootingStar: 0xffe584 };
     const effects: Record<ElementKind, string> = {
-      water: '12초 동안 빠른 거품!', fire: '12초 동안 고속 불꽃 거품!',
-      shoes: '12초 동안 이동·점프 속도 UP!', shield: '15초 안의 피격 1회 방어!', cloud: '10초 동안 점프 키로 비행!',
+      water: '목숨을 잃기 전까지 빠른 거품!', lightning: this.currentStage.boss ? '왕에게 번개 공격! (피해 2)' : '목숨을 잃기 전까지 번개 거품!', fire: this.currentStage.boss ? '왕에게 불꽃 공격! (피해 3)' : '목숨을 잃기 전까지 고속 불꽃 거품!',
+      shoes: '목숨을 잃기 전까지 이동·점프 속도 UP!', shield: '시간제한 없이 피격 1회 방어!', cloud: '목숨을 잃기 전까지 점프 키로 비행!', rainbow: '무지개 거품! 귀신 충돌 10회 보호!', shootingStar: '발사할 때 별똥별이 적 하나를 데려가요!',
     };
     this.burst(player.sprite.x, player.sprite.y, colors[item.kind], 24);
     this.showNotice(`${effects[item.kind]} +750`, `#${colors[item.kind].toString(16).padStart(6, '0')}`, 1800);
@@ -498,6 +682,8 @@ export class GameScene extends Phaser.Scene {
 
   private continueAfterGameOver(): void {
     this.awaitingContinue = false;
+    this.clearBossHazards();
+    if (this.boss) this.boss.attackIn = 3;
     for (const player of this.players) {
       player.lives = this.currentStage.rules.startingLives;
       player.dead = false;
@@ -517,11 +703,11 @@ export class GameScene extends Phaser.Scene {
     enemy.captured = true;
     this.tweens.killTweensOf(enemy.sprite);
     (enemy.sprite.body as Phaser.Physics.Arcade.Body).enable = false;
-    enemy.sprite.setVisible(true).setAlpha(0.72).setDisplaySize(18, 20).setDepth(16);
+    enemy.sprite.setTexture(`${enemy.textureKey}-trapped`).clearTint().setVisible(true).setAlpha(1).setDisplaySize(18, 20).setDepth(16);
     bubble.capturedEnemy = enemy;
     bubble.capturedAt = this.time.now;
     bubble.expiresAt = this.time.now + 5600;
-    bubble.sprite.setTexture(enemy.kind === 'ghost_bubblun' ? 'bubble-green' : 'bubble-blue').setScale(1.2);
+    bubble.sprite.setTexture('bubble-green').setScale(1.2);
     this.showNotice('가둔 거품에 몸으로 톡!', '#dff7ff');
   }
 
@@ -530,7 +716,7 @@ export class GameScene extends Phaser.Scene {
     if (!enemy) return;
     enemy.captured = false;
     enemy.enraged = true;
-    enemy.sprite.setPosition(bubble.sprite.x, bubble.sprite.y).setVisible(true).setAlpha(0.9).setDisplaySize(30, 34).setDepth(18);
+    enemy.sprite.setTexture(enemy.textureKey).setPosition(bubble.sprite.x, bubble.sprite.y).setVisible(true).setAlpha(0.9).setDisplaySize(30, 34).setDepth(18);
     const body = enemy.sprite.body as Phaser.Physics.Arcade.Body;
     body.enable = true;
     body.setVelocityY(60);
@@ -551,7 +737,7 @@ export class GameScene extends Phaser.Scene {
     this.maybeSpawnExitLetter(bubble.sprite.x, bubble.sprite.y - 12);
     this.burst(bubble.sprite.x, bubble.sprite.y, enemy.kind === 'ghost_bubblun' ? 0x84e58d : 0x7fc9ff);
     this.cameras.main.shake(90, 0.004);
-    this.showNotice(`${player.character === 'pochacco' ? '포차코' : '마이멜로디'} 성공! +100`, '#fff5b8');
+    this.showNotice(`${player.character === 'nakkong' ? '낙콩' : '무닝'} 성공! +100`, '#fff5b8');
     this.destroyBubble(bubble);
   }
 
@@ -564,6 +750,14 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     player.lives -= 1;
+    player.bubbleElement = undefined;
+    player.bubbleElementUntil = player.speedUntil = player.shieldUntil = player.flightUntil = 0;
+    player.rainbowBubbles = player.shootingStar = false;
+    player.rainbowRemaining = 0;
+    player.rainbowContacts.clear();
+    player.rainbowLabel.setText('');
+    player.sprite.clearTint();
+    (player.sprite.body as Phaser.Physics.Arcade.Body).setAllowGravity(true);
     player.invulnerable = 3;
     this.burst(player.sprite.x, player.sprite.y, 0xfff1a8);
     this.cameras.main.shake(130, 0.007);
@@ -579,13 +773,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   private completeStage(exitBonus = false): void {
-    if (!this.playing) return;
+    if (!this.playing || (this.currentStage.boss && (!this.boss || this.boss.hp > 0))) return;
     document.dispatchEvent(new CustomEvent('bubblebubble-calm'));
     if (this.stageIndex < stages.length - 1) {
       this.playing = false;
       this.physics.pause();
       this.players.forEach((player) => {
-        this.playerProgress[player.index] = { lives: Math.max(1, player.lives) };
+        this.playerProgress[player.index] = {
+          lives: Math.max(1, player.lives), bubbleElement: player.bubbleElement,
+          bubbleElementUntil: player.bubbleElementUntil, speedUntil: player.speedUntil,
+          shieldUntil: player.shieldUntil, flightUntil: player.flightUntil,
+          rainbowBubbles: player.rainbowBubbles, rainbowRemaining: player.rainbowRemaining,
+          shootingStar: player.shootingStar,
+        };
       });
       this.cameras.main.flash(260, 255, 245, 184);
       this.showNotice(exitBonus ? 'EXIT 완성! 보너스 +5000 · STAGE CLEAR!' : `STAGE ${this.stageIndex + 1} CLEAR!`, '#fff5b8', 700);
@@ -623,7 +823,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private clearSession(): void {
-    this.players.forEach((player) => { if (player.sprite.active) player.sprite.destroy(); });
+    for (const sprite of this.starEffects) {
+      this.tweens.killTweensOf(sprite);
+      sprite.destroy();
+    }
+    this.starEffects = [];
+    this.clearBossHazards();
+    if (this.boss) { if (this.boss.sprite.active) this.boss.sprite.destroy(); this.boss.hud.destroy(true); this.boss = undefined; }
+    this.players.forEach((player) => { if (player.sprite.active) player.sprite.destroy(); player.rainbowLabel.destroy(); });
     this.enemies.forEach((enemy) => { if (enemy.sprite.active) enemy.sprite.destroy(); });
     this.bubbles.forEach((bubble) => { if (bubble.sprite.active) bubble.sprite.destroy(); });
     this.pickups.forEach((pickup) => { if (pickup.sprite.active) pickup.sprite.destroy(); });
@@ -678,15 +885,15 @@ export class GameScene extends Phaser.Scene {
     this.hudScore = this.add.text(14, 10, 'SCORE 0000', { ...style, color: '#fff1a8' }).setDepth(41);
     this.hudTime = this.add.text(WIDTH / 2, 10, 'TIME 70', { ...style, fontSize: '12px' }).setOrigin(0.5, 0).setDepth(41);
     this.hudLives = this.add.text(WIDTH - 14, 10, '', { ...style, color: '#dff7ff' }).setOrigin(1, 0).setDepth(41);
-    this.notice = this.add.text(WIDTH / 2, 55, '', { ...style, fontSize: '16px', backgroundColor: '#100d24dd', padding: { x: 12, y: 7 } }).setOrigin(0.5).setDepth(45).setVisible(false);
+    this.notice = this.add.text(WIDTH / 2, 89, '', { ...style, fontSize: '16px', backgroundColor: '#100d24dd', padding: { x: 12, y: 7 } }).setOrigin(0.5).setDepth(45).setVisible(false);
   }
 
   private refreshHud(): void {
     this.hudScore.setText(`SCORE ${String(this.score).padStart(4, '0')}`);
     const letters = (['E', 'X', 'I', 'T'] as ExitLetter[]).map((letter) => this.exitLetters.has(letter) ? letter : '_').join(' ');
     const timeText = this.awaitingContinue ? `CONTINUE ${Math.max(0, Math.ceil((this.continueUntil - this.time.now) / 1000))}` : this.dangerActive ? 'WHALE!' : `TIME ${Math.ceil(this.timeLeft)}`;
-    this.hudTime.setText(`STAGE ${this.stageIndex + 1} · ${timeText} · EXIT [${letters}]`).setColor(this.timeLeft <= 30 || this.awaitingContinue ? '#ff8fa5' : '#ffffff');
-    this.hudLives.setText(this.players.map((player) => `${player.index === 0 ? 'P' : 'M'} ♥${player.lives}`).join('   '));
+    this.hudTime.setText(this.currentStage.boss ? `ROUND 01 · ${this.timeLeft <= 0 ? '분노!' : timeText}` : `STAGE ${this.stageIndex + 1} · ${timeText} · EXIT [${letters}]`).setColor(this.timeLeft <= 30 || this.awaitingContinue ? '#ff8fa5' : '#ffffff');
+    this.hudLives.setText(this.players.map((player) => `${player.index + 1}P ♥${player.lives}`).join('   '));
   }
 
   private showNotice(message: string, color: string, duration = 1400): void {
@@ -711,252 +918,72 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawBackdrop(): void {
-    if (this.backdrop) {
-      this.backdrop.each((child: Phaser.GameObjects.GameObject) => this.tweens.killTweensOf(child));
-      this.backdrop.destroy(true);
-    }
-    const palette = this.currentStage.theme.palette;
-    const colors = palette.map((color) => Phaser.Display.Color.HexStringToColor(color).color);
+    this.backdrop?.destroy(true);
     const backdrop = this.add.container(0, 0).setDepth(-10);
-    const background = this.add.graphics();
-    backdrop.add(background);
-    background.fillGradientStyle(colors[0], colors[0], colors[1], colors[1], 1);
-    background.fillRect(0, 0, WIDTH, HEIGHT);
-    const theme = this.currentStage.theme.background;
-    if (theme === 'moonlight_playground') {
-      background.fillStyle(colors[4], 0.96).fillCircle(425, 77, 34);
-      background.fillStyle(colors[0], 1).fillCircle(438, 66, 33);
-    } else if (theme === 'starlight_stairs') {
-      background.lineStyle(3, colors[4], 0.6);
-      for (let i = 0; i < 5; i += 1) background.lineBetween(65 + i * 95, 55 + (i % 2) * 35, 105 + i * 90, 42 + (i % 3) * 20);
-    } else if (theme === 'ghost_tower') {
-      background.fillStyle(colors[0], 0.65).fillRect(188, 62, 136, 350);
-      for (let y = 92; y < 360; y += 62) for (let x = 210; x < 310; x += 48) background.fillStyle(colors[4], 0.18).fillRect(x, y, 19, 30);
-    } else if (theme === 'candy_cavern') {
-      for (let i = 0; i < 10; i += 1) {
-        const x = 38 + (i * 53) % 460; const y = 58 + (i * 71) % 300;
-        background.fillStyle(i % 2 ? colors[2] : colors[3], 0.22).fillCircle(x, y, 13 + (i % 3) * 4);
-        background.lineStyle(2, colors[4], 0.25).lineBetween(x - 9, y + 9, x + 9, y - 9);
-      }
-    } else if (theme === 'rainbow_sky') {
-      background.lineStyle(8, colors[2], 0.2).beginPath().arc(WIDTH / 2, 250, 130, Math.PI, Math.PI * 2).strokePath();
-      background.lineStyle(8, colors[3], 0.22).beginPath().arc(WIDTH / 2, 250, 108, Math.PI, Math.PI * 2).strokePath();
-      for (let x = 20; x < WIDTH; x += 70) background.fillStyle(0xffffff, 0.15).fillCircle(x, 390 - (x % 3) * 8, 34);
-    } else if (theme === 'deep_sea_temple') {
-      for (let y = 70; y < 390; y += 62) for (let x = 45; x < WIDTH; x += 88) background.fillStyle(colors[3], 0.12).fillCircle(x, y, 8 + (y % 3));
-      background.lineStyle(5, colors[2], 0.18).strokeRect(182, 75, 148, 315);
-      background.fillStyle(colors[4], 0.12).fillTriangle(210, 92, 302, 92, 256, 52);
-    } else if (theme === 'toy_factory') {
-      for (let x = 45; x < WIDTH; x += 82) for (let y = 70; y < 390; y += 95) {
-        background.lineStyle(3, colors[3], 0.18).strokeCircle(x, y, 18);
-        background.fillStyle(colors[2], 0.14).fillCircle(x, y, 7);
-      }
-    } else if (theme === 'ice_palace') {
-      for (let x = 25; x < WIDTH; x += 54) background.fillStyle(colors[4], 0.13).fillTriangle(x, 35, x + 24, 35, x + 12, 105 + (x % 4) * 13);
-      background.lineStyle(2, colors[3], 0.2); for (let y = 135; y < 400; y += 56) background.lineBetween(30, y, WIDTH - 30, y - 25);
-    } else if (theme === 'volcano_core') {
-      background.fillStyle(colors[3], 0.13); for (let x = 20; x < WIDTH; x += 64) background.fillTriangle(x, 410, x + 32, 280 - (x % 5) * 12, x + 64, 410);
-      background.lineStyle(4, colors[4], 0.2); for (let x = 55; x < WIDTH; x += 95) background.lineBetween(x, 390, x + 12, 250);
-    } else {
-      for (let i = 0; i < 16; i += 1) background.fillStyle(colors[4], 0.3).fillCircle(22 + (i * 73) % 480, 48 + (i * 97) % 330, i % 4 === 0 ? 3 : 1);
-      background.lineStyle(3, colors[3], 0.18).strokeCircle(WIDTH / 2, 220, 118);
-      background.lineStyle(2, colors[2], 0.2).strokeCircle(WIDTH / 2, 220, 78);
+    const graphics = this.add.graphics();
+    backdrop.add(graphics);
+    graphics.fillStyle(0x05050d).fillRect(0, 0, WIDTH, HEIGHT);
+    const color = Phaser.Display.Color.HexStringToColor(this.currentStage.theme.palette[2]).color;
+    // Sparse pixels leave the playfield legible, with a different motif per round.
+    for (let i = 0; i < 44; i++) {
+      const x = 40 + (i * 83 + this.stageIndex * 17) % 430;
+      const y = 83 + (i * 61) % 310;
+      graphics.fillStyle(color, .14).fillRect(x, y, 2, 2);
+      if (i % 7 === 0) graphics.fillRect(x - 2, y + 2, 6, 2);
     }
-    const stars = [[50,66],[104,91],[173,55],[247,82],[321,51],[381,105],[469,133],[74,151],[284,128]];
-    stars.forEach(([x, y], i) => {
-      const star = this.add.circle(x, y, i % 3 === 0 ? 2 : 1, colors[4], 0.72);
-      backdrop.add(star);
-      this.tweens.add({ targets: star, alpha: 0.2, duration: 700 + i * 83, yoyo: true, repeat: -1 });
-    });
-    background.fillStyle(colors[1], 0.6);
-    for (let x = -20; x < WIDTH + 30; x += 45) background.fillCircle(x, HEIGHT + 5, 55);
-    const wind = this.add.graphics();
-    backdrop.add(wind);
-    wind.lineStyle(2, colors[4], 0.13);
-    this.currentStage.airflow.forEach((zone) => {
-      const cx = (zone.tileRect.x + zone.tileRect.width / 2) * TILE;
-      const top = zone.tileRect.y * TILE;
-      for (let y = top; y < (zone.tileRect.y + zone.tileRect.height) * TILE; y += 28) wind.strokeCircle(cx + Math.sin(y) * 11, y, 6);
-    });
+    if (this.currentStage.boss) {
+      graphics.lineStyle(2, 0x81366f, .2);
+      graphics.strokeRect(178, 114, 156, 262);
+      graphics.strokeRect(190, 126, 132, 250);
+      graphics.fillStyle(0x632076, .14).fillRect(194, 130, 124, 246);
+      for (let x = 202; x < 320; x += 24) graphics.fillStyle(0xffdc59, .12).fillRect(x, 114, 10, 10);
+    } else {
+      // Diamond constellations echo each stage's palette without hiding shots.
+      for (let i = 0; i < 5; i++) {
+        const x = 76 + i * 86, y = 125 + ((i + this.stageIndex) % 3) * 78;
+        graphics.lineStyle(2, color, .14).strokeRect(x, y, 14 + this.stageIndex, 14 + this.stageIndex);
+      }
+    }
     this.backdrop = backdrop;
   }
 
   private createTextures(): void {
-    stages.forEach((stage, index) => this.createCanvasTexture(`platform-s${index + 1}`, 32, 32, (c) => {
-      const [dark, middle, bright] = stage.theme.palette;
-      const gradient = c.createLinearGradient(0, 0, 0, 32); gradient.addColorStop(0, bright); gradient.addColorStop(.2, middle); gradient.addColorStop(1, dark);
-      c.fillStyle = gradient; c.fillRect(0, 0, 32, 32); c.fillStyle = stage.theme.palette[4]; c.globalAlpha = .72; c.fillRect(0, 0, 32, 4); c.globalAlpha = 1;
-      c.fillStyle = dark; c.fillRect(5, 15, 22, 4); c.fillStyle = bright; c.fillRect(3, 7, 4, 4); c.fillRect(23, 23, 5, 4);
-    }));
-    this.createHighResTexture('pochacco', 28, 34, (c) => this.drawPochacco(c));
-    this.createHighResTexture('my_melody', 28, 36, (c) => this.drawMelody(c));
-    const ghostColors = [
-      ['#76dc82', '#70c5f4'], ['#f1a35f', '#bd8af2'], ['#f06186', '#68d8d0'], ['#ffb05f', '#f47eb6'], ['#75e0b8', '#82baff'],
-      ['#37c9bd', '#4fa7d8'], ['#f08a61', '#d7a840'], ['#9fdfff', '#b7b2ff'], ['#ff6d42', '#d33f67'], ['#9c7cff', '#eb76e8'],
-    ];
-    ghostColors.forEach(([green, blue], index) => {
-      this.createHighResTexture(`ghost_bubblun-s${index + 1}`, 30, 34, (c) => this.drawGhostTexture(c, green, index, 'bubblun'));
-      this.createHighResTexture(`ghost_bobblun-s${index + 1}`, 30, 34, (c) => this.drawGhostTexture(c, blue, index, 'bobblun'));
+    const art = (key: string, width: number, height: number, highRes = false, accent?: string, secondary?: string) => {
+      const draw = (c: CanvasRenderingContext2D) => drawArcadeArt(c, key, width, height, accent, secondary);
+      if (highRes) this.createHighResTexture(key, width, height, draw);
+      else this.createCanvasTexture(key, width, height, draw);
+      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    };
+    stages.forEach((stage, index) => {
+      art(`platform-s${index + 1}`, 32, 32, false, stage.theme.palette[2], stage.theme.palette[4]);
+
     });
-    this.createBubbleTexture('bubble', '#dff7ff');
-    this.createBubbleTexture('bubble-green', '#8de99a');
-    this.createBubbleTexture('bubble-blue', '#87d4ff');
-    this.createBubbleTexture('bubble-water', '#54d9ff');
-    this.createBubbleTexture('bubble-fire', '#ff8a4a');
-    this.createCanvasTexture('strawberry', 28, 28, (c) => this.drawStrawberry(c));
-    this.createCanvasTexture('banana', 28, 28, (c) => this.drawBanana(c));
-    this.createCanvasTexture('cookie', 28, 28, (c) => this.drawCookie(c));
-    this.createHighResTexture('water-item', 28, 32, (c) => this.drawElementItem(c, 'water'));
-    this.createHighResTexture('fire-item', 28, 32, (c) => this.drawElementItem(c, 'fire'));
-    this.createHighResTexture('shoes-item', 28, 32, (c) => this.drawElementItem(c, 'shoes'));
-    this.createHighResTexture('shield-item', 28, 32, (c) => this.drawElementItem(c, 'shield'));
-    this.createHighResTexture('cloud-item', 28, 32, (c) => this.drawElementItem(c, 'cloud'));
-    (['E', 'X', 'I', 'T'] as ExitLetter[]).forEach((letter) => this.createLetterTexture(letter));
-    this.createHighResTexture('ghost-whale', 64, 46, (c) => this.drawGhostWhale(c));
-    this.createCanvasTexture('spark', 6, 6, (c) => { c.fillStyle = '#fff'; c.beginPath(); c.moveTo(3,0); c.lineTo(4,2); c.lineTo(6,3); c.lineTo(4,4); c.lineTo(3,6); c.lineTo(2,4); c.lineTo(0,3); c.lineTo(2,2); c.closePath(); c.fill(); });
+    for (let i = 0; i < 8; i++) {
+      art(`ghost_enemy-v${i}`, 30, 34, true);
+      art(`ghost_enemy-v${i}-trapped`, 30, 34, true);
+    }
+    this.createHighResTexture('nakkong', 38, 40, (c) => drawCharacter(c, 'nakkong'));
+    this.createHighResTexture('muning', 38, 40, (c) => drawCharacter(c, 'muning'));
+    ['bubble', 'bubble-green', 'bubble-blue', 'bubble-water', 'bubble-fire', 'bubble-lightning'].forEach(key => art(key, 28, 28));
+    ['strawberry', 'banana', 'cookie', 'apple', 'grapes', 'cherries'].forEach(key => art(key, 28, 28));
+    ['water', 'fire', 'lightning', 'shoes', 'shield', 'rainbow', 'cloud', 'shootingStar'].forEach(kind => art(`${kind}-item`, 28, 32, true));
+    ['E', 'X', 'I', 'T'].forEach((letter, index) => art(`letter-${letter}`, 30, 34, false, ['#ff6897', '#53d6ff', '#ffe36a', '#7aef67'][index]));
+    art('ghost-whale', 64, 46, true);
+    art('boss-king', 96, 96, true);
+    art('boss-lightning', 24, 336);
+    art('boss-fire', 28, 28);
+    art('spark', 6, 6);
   }
 
   private createCanvasTexture(key: string, width: number, height: number, draw: (context: CanvasRenderingContext2D) => void): void {
     if (this.textures.exists(key)) return;
     const texture = this.textures.createCanvas(key, width, height);
     if (!texture) return;
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = true;
-    draw(context);
+    draw(texture.getContext());
     texture.refresh();
   }
 
   private createHighResTexture(key: string, width: number, height: number, draw: (context: CanvasRenderingContext2D) => void): void {
-    if (this.textures.exists(key)) return;
-    const texture = this.textures.createCanvas(key, width * 2, height * 2);
-    if (!texture) return;
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = true;
-    context.scale(2, 2);
-    draw(context);
-    texture.refresh();
-  }
-
-  private createBubbleTexture(key: string, color: string): void {
-    this.createCanvasTexture(key, 28, 28, (c) => {
-      const gradient = c.createRadialGradient(9, 8, 2, 14, 14, 13); gradient.addColorStop(0, '#ffffffcc'); gradient.addColorStop(.18, `${color}66`); gradient.addColorStop(.72, `${color}22`); gradient.addColorStop(1, color);
-      c.fillStyle = gradient; c.beginPath(); c.arc(14, 14, 12, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#ffffffcc'; c.lineWidth = 1.5; c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(9, 8, 3, 0, Math.PI * 2); c.fill();
-    });
-  }
-
-  private drawPochacco(c: CanvasRenderingContext2D): void {
-    c.strokeStyle = '#38303f'; c.lineWidth = 2; c.lineJoin = 'round'; c.fillStyle = '#292432'; c.beginPath(); c.ellipse(5, 11, 5, 11, -.35, 0, Math.PI * 2); c.ellipse(23, 11, 5, 11, .35, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#f7f5ed'; c.beginPath(); c.ellipse(14, 14, 11, 12, 0, 0, Math.PI * 2); c.fill(); c.stroke(); c.fillStyle = '#f7f5ed'; c.beginPath(); c.roundRect(7, 22, 14, 11, 6); c.fill(); c.stroke();
-    c.fillStyle = '#292432'; c.beginPath(); c.arc(10, 14, 1.4, 0, Math.PI * 2); c.arc(18, 14, 1.4, 0, Math.PI * 2); c.fill(); c.beginPath(); c.arc(14, 18, 1.5, 0, Math.PI * 2); c.fill(); c.fillStyle = '#e9697c'; c.beginPath(); c.roundRect(8, 24, 12, 5, 2); c.fill();
-  }
-
-  private drawMelody(c: CanvasRenderingContext2D): void {
-    c.strokeStyle = '#5b354a'; c.lineWidth = 2; c.fillStyle = '#f3a2c3'; c.beginPath(); c.roundRect(3, 0, 7, 17, 6); c.roundRect(18, 0, 7, 17, 6); c.fill(); c.stroke(); c.beginPath(); c.arc(14, 17, 13, 0, Math.PI * 2); c.fill(); c.stroke();
-    c.fillStyle = '#fff8f2'; c.beginPath(); c.ellipse(14, 18, 9, 10, 0, 0, Math.PI * 2); c.fill(); c.fillStyle = '#35263f'; c.beginPath(); c.arc(11, 17, 1.25, 0, Math.PI*2); c.arc(18, 17, 1.25, 0, Math.PI*2); c.arc(14.5, 21, 1.2, 0, Math.PI*2); c.fill();
-    c.fillStyle = '#fff1a8'; c.beginPath(); c.arc(21, 8, 3.5, 0, Math.PI*2); c.fill(); c.fillStyle = '#f3a2c3'; c.beginPath(); c.roundRect(6, 27, 16, 8, 5); c.fill(); c.stroke();
-  }
-
-  private drawGhostTexture(c: CanvasRenderingContext2D, color: string, variant: number, family: 'bubblun' | 'bobblun'): void {
-    if (variant === 1) {
-      c.fillStyle = '#fff1a8'; c.beginPath(); c.moveTo(5, 9); c.lineTo(8, 1); c.lineTo(12, 9); c.moveTo(18, 9); c.lineTo(22, 1); c.lineTo(25, 9); c.fill();
-    } else if (variant === 2) {
-      c.fillStyle = '#ffe36f'; c.beginPath(); c.moveTo(7, 7); c.lineTo(9, 0); c.lineTo(14, 5); c.lineTo(20, 0); c.lineTo(23, 8); c.fill();
-    } else if (variant === 3) {
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(8, 5, 4, 0, Math.PI * 2); c.arc(15, 3, 5, 0, Math.PI * 2); c.arc(22, 6, 4, 0, Math.PI * 2); c.fill();
-    } else if (variant === 4) {
-      c.strokeStyle = '#fff3a8'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 8); c.quadraticCurveTo(15, -1, 26, 8); c.stroke();
-    } else if (variant === 5) {
-      c.fillStyle = '#8ff5ee'; c.beginPath(); c.moveTo(4, 12); c.lineTo(0, 5); c.lineTo(10, 9); c.moveTo(22, 9); c.lineTo(30, 4); c.lineTo(27, 14); c.fill();
-    } else if (variant === 6) {
-      c.fillStyle = '#ffe16a'; c.strokeStyle = '#6b4424'; c.lineWidth = 1.5; c.beginPath(); c.arc(15, 5, 6, 0, Math.PI * 2); c.fill(); c.stroke();
-    } else if (variant === 7) {
-      c.fillStyle = '#e9fbff'; c.beginPath(); c.moveTo(5, 10); c.lineTo(8, 0); c.lineTo(12, 9); c.lineTo(16, 1); c.lineTo(20, 9); c.lineTo(24, 0); c.lineTo(27, 11); c.fill();
-    } else if (variant === 8) {
-      c.fillStyle = '#ffcf58'; c.beginPath(); c.moveTo(5, 11); c.lineTo(4, 0); c.lineTo(12, 9); c.lineTo(17, 0); c.lineTo(25, 11); c.fill();
-    } else if (variant === 9) {
-      c.strokeStyle = '#e8d8ff'; c.lineWidth = 2; c.beginPath(); c.moveTo(15, 8); c.lineTo(15, 1); c.stroke(); c.fillStyle = '#ff77e8'; c.beginPath(); c.arc(15, 2, 3, 0, Math.PI * 2); c.fill();
-    }
-    c.globalAlpha = .9; c.strokeStyle = '#243144'; c.lineWidth = 2; c.fillStyle = color; c.beginPath(); c.arc(15, 13, 12, Math.PI, 0); c.lineTo(27, 24); c.quadraticCurveTo(24, 29, 20, 24); c.quadraticCurveTo(15, 31, 11, 24); c.quadraticCurveTo(6, 29, 3, 24); c.lineTo(3, 13); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(11, 13, 3, 0, Math.PI*2); c.arc(20, 13, 3, 0, Math.PI*2); c.fill(); c.fillStyle = '#253042'; c.beginPath(); c.arc(12, 14, 1.2, 0, Math.PI*2); c.arc(21, 14, 1.2, 0, Math.PI*2); c.fill(); c.globalAlpha = 1;
-    if (family === 'bobblun') {
-      c.fillStyle = color; c.strokeStyle = '#243144'; c.lineWidth = 2;
-      c.beginPath(); c.moveTo(4, 15); c.lineTo(0, 8); c.lineTo(1, 21); c.closePath(); c.fill(); c.stroke();
-      c.beginPath(); c.moveTo(26, 15); c.lineTo(30, 8); c.lineTo(29, 21); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(11, 19); c.lineTo(14, 24); c.lineTo(16, 19); c.fill();
-    } else {
-      c.strokeStyle = '#243144'; c.lineWidth = 2; c.beginPath(); c.arc(15, 20, 5, 0.15, Math.PI - 0.15); c.stroke();
-      c.fillStyle = '#243144'; c.beginPath(); c.arc(12, 19, 1.1, 0, Math.PI * 2); c.arc(18, 19, 1.1, 0, Math.PI * 2); c.fill();
-    }
-    if (variant === 1) { c.fillStyle = '#fff'; c.fillRect(7, 20, 3, 3); c.fillRect(21, 18, 3, 3); }
-    if (variant === 2) { c.strokeStyle = '#5b2542'; c.lineWidth = 2; c.beginPath(); c.moveTo(10, 20); c.quadraticCurveTo(15, 24, 21, 19); c.stroke(); }
-    if (variant === 3) { c.fillStyle = '#fff1a8'; c.beginPath(); c.arc(15, 21, 4, 0, Math.PI * 2); c.fill(); }
-    if (variant === 4) { c.fillStyle = '#dff7ff'; c.fillRect(6, 22, 4, 3); c.fillRect(20, 22, 4, 3); }
-    if (variant === 5) { c.strokeStyle = '#d5fff8'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(6, 18); c.lineTo(1, 22); c.moveTo(24, 18); c.lineTo(29, 22); c.stroke(); }
-    if (variant === 6) { c.fillStyle = '#2d2638'; c.fillRect(6, 11, 18, 5); c.fillStyle = '#ff525d'; c.fillRect(9, 12, 4, 2); c.fillRect(18, 12, 4, 2); }
-    if (variant === 7) { c.fillStyle = '#fff'; c.beginPath(); c.arc(8, 22, 2, 0, Math.PI * 2); c.arc(23, 20, 2, 0, Math.PI * 2); c.fill(); }
-    if (variant === 8) { c.fillStyle = '#3d1720'; c.beginPath(); c.moveTo(10, 20); c.lineTo(14, 25); c.lineTo(18, 20); c.fill(); }
-    if (variant === 9) { c.strokeStyle = '#f7e4ff'; c.lineWidth = 1.5; c.strokeRect(7, 10, 7, 6); c.strokeRect(17, 10, 7, 6); c.beginPath(); c.moveTo(14, 13); c.lineTo(17, 13); c.stroke(); }
-  }
-
-  private drawGhostWhale(c: CanvasRenderingContext2D): void {
-    c.globalAlpha = 0.96;
-    c.strokeStyle = '#121525'; c.lineWidth = 2.5; c.fillStyle = '#ebe9da';
-    c.beginPath(); c.ellipse(49, 18, 13, 14, -0.08, 0, Math.PI * 2); c.fill(); c.stroke();
-    c.beginPath(); c.moveTo(45, 17); c.quadraticCurveTo(28, 13, 4, 20); c.lineTo(2, 25); c.quadraticCurveTo(25, 22, 47, 25); c.closePath(); c.fill(); c.stroke();
-    c.beginPath(); c.moveTo(5, 29); c.quadraticCurveTo(27, 35, 53, 28); c.quadraticCurveTo(31, 42, 7, 35); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#1b2038'; c.beginPath(); c.ellipse(51, 15, 5, 6, -0.2, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.ellipse(42, 13, 3, 4, 0.3, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#ff456c'; c.beginPath(); c.arc(52, 15, 1.8, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#fff'; for (let x = 12; x <= 43; x += 6) { c.beginPath(); c.moveTo(x, 28); c.lineTo(x + 3, 33); c.lineTo(x + 5, 27); c.fill(); }
-    c.strokeStyle = '#d6d2bf'; c.lineWidth = 2; for (let x = 8; x < 36; x += 7) { c.beginPath(); c.moveTo(x, 18); c.lineTo(x + 2, 24); c.stroke(); }
-    c.strokeStyle = '#ff456c'; c.beginPath(); c.moveTo(58, 8); c.quadraticCurveTo(61, 3, 63, 8); c.stroke();
-    c.globalAlpha = 1;
-  }
-
-  private drawStrawberry(c: CanvasRenderingContext2D): void {
-    c.strokeStyle = '#7d2945'; c.lineWidth = 2; c.fillStyle = '#f05274'; c.beginPath(); c.moveTo(4,8); c.quadraticCurveTo(14,3,24,8); c.quadraticCurveTo(22,22,14,27); c.quadraticCurveTo(6,22,4,8); c.fill(); c.stroke();
-    c.fillStyle = '#76c66b'; c.beginPath(); c.moveTo(7,8); c.lineTo(10,2); c.lineTo(14,7); c.lineTo(19,2); c.lineTo(21,9); c.fill();
-    c.fillStyle = '#ffe9a8'; [[10,12],[18,13],[13,18],[9,21],[18,21]].forEach(([x,y]) => c.fillRect(x,y,2,2));
-  }
-
-  private drawBanana(c: CanvasRenderingContext2D): void {
-    c.strokeStyle = '#9b6d24'; c.lineWidth = 2.5; c.fillStyle = '#ffe16a'; c.beginPath(); c.moveTo(6,4); c.quadraticCurveTo(7,21,23,20); c.quadraticCurveTo(12,27,4,14); c.quadraticCurveTo(2,8,6,4); c.fill(); c.stroke(); c.fillStyle = '#6b4b20'; c.fillRect(4,2,4,3); c.fillRect(21,18,4,3);
-  }
-
-  private drawCookie(c: CanvasRenderingContext2D): void {
-    c.strokeStyle = '#795038'; c.lineWidth = 2; c.fillStyle = '#dca56f'; c.beginPath(); c.arc(14,14,11,0,Math.PI*2); c.fill(); c.stroke(); c.fillStyle = '#70442f'; [[9,9],[18,8],[14,15],[8,19],[20,19]].forEach(([x,y]) => { c.beginPath(); c.arc(x,y,2,0,Math.PI*2); c.fill(); });
-  }
-
-  private drawElementItem(c: CanvasRenderingContext2D, kind: ElementKind): void {
-    c.strokeStyle = '#fff'; c.lineWidth = 2;
-    if (kind === 'water') {
-      const gradient = c.createLinearGradient(5, 3, 23, 29); gradient.addColorStop(0, '#c7f6ff'); gradient.addColorStop(1, '#2ab7ed');
-      c.fillStyle = gradient; c.beginPath(); c.moveTo(14, 2); c.bezierCurveTo(20, 11, 25, 17, 23, 23); c.bezierCurveTo(21, 31, 7, 31, 5, 23); c.bezierCurveTo(3, 17, 9, 10, 14, 2); c.fill(); c.stroke();
-      c.fillStyle = '#fff'; c.globalAlpha = .7; c.beginPath(); c.arc(10, 20, 3, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
-    } else if (kind === 'fire') {
-      const gradient = c.createLinearGradient(5, 2, 23, 30); gradient.addColorStop(0, '#fff08b'); gradient.addColorStop(.5, '#ff8a43'); gradient.addColorStop(1, '#e83d4c');
-      c.fillStyle = gradient; c.beginPath(); c.moveTo(15, 1); c.bezierCurveTo(22, 10, 25, 17, 22, 25); c.bezierCurveTo(18, 33, 5, 29, 6, 20); c.bezierCurveTo(7, 14, 13, 12, 15, 1); c.fill(); c.stroke();
-      c.fillStyle = '#fff3a8'; c.beginPath(); c.moveTo(15, 14); c.quadraticCurveTo(20, 22, 14, 28); c.quadraticCurveTo(9, 23, 15, 14); c.fill();
-    } else if (kind === 'shoes') {
-      c.fillStyle = '#ffe36e'; c.beginPath(); c.roundRect(2, 15, 22, 12, 5); c.fill(); c.stroke();
-      c.fillStyle = '#ff7b82'; c.fillRect(7, 8, 12, 12); c.strokeRect(7, 8, 12, 12);
-      c.fillStyle = '#fff'; c.fillRect(4, 24, 23, 5); c.strokeRect(4, 24, 23, 5);
-      c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(10, 13); c.lineTo(18, 13); c.moveTo(10, 17); c.lineTo(18, 17); c.stroke();
-    } else if (kind === 'shield') {
-      c.fillStyle = '#79e0ae'; c.beginPath(); c.moveTo(14, 2); c.lineTo(25, 7); c.lineTo(23, 22); c.quadraticCurveTo(14, 31, 5, 22); c.lineTo(3, 7); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle = '#eafff4'; c.beginPath(); c.moveTo(14, 7); c.lineTo(17, 13); c.lineTo(23, 14); c.lineTo(18, 18); c.lineTo(20, 25); c.lineTo(14, 21); c.lineTo(8, 25); c.lineTo(10, 18); c.lineTo(5, 14); c.lineTo(11, 13); c.closePath(); c.fill();
-    } else {
-      const gradient = c.createLinearGradient(0, 7, 0, 29); gradient.addColorStop(0, '#ffffff'); gradient.addColorStop(1, '#a9ddf4');
-      c.fillStyle = gradient; c.beginPath(); c.arc(8, 20, 6, 0, Math.PI * 2); c.arc(14, 13, 8, 0, Math.PI * 2); c.arc(21, 20, 6, 0, Math.PI * 2); c.roundRect(5, 18, 19, 10, 5); c.fill(); c.stroke();
-      c.strokeStyle = '#5abfe8'; c.lineWidth = 2; c.beginPath(); c.moveTo(8, 29); c.lineTo(6, 32); c.moveTo(15, 29); c.lineTo(13, 32); c.moveTo(22, 29); c.lineTo(20, 32); c.stroke();
-    }
-  }
-
-  private createLetterTexture(letter: ExitLetter): void {
-    this.createCanvasTexture(`letter-${letter}`, 30, 34, (c) => {
-      const colors: Record<ExitLetter, string> = { E: '#ff799c', X: '#77d8ff', I: '#ffe26e', T: '#8be793' };
-      c.fillStyle = '#211a3e'; c.beginPath(); c.roundRect(1, 1, 28, 32, 7); c.fill();
-      c.strokeStyle = colors[letter]; c.lineWidth = 3; c.stroke();
-      c.fillStyle = colors[letter]; c.font = '900 23px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(letter, 15, 18);
-    });
+    this.createCanvasTexture(key, width * 2, height * 2, c => { c.scale(2, 2); draw(c); });
   }
 }

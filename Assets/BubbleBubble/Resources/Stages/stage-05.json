@@ -1,0 +1,213 @@
+{
+  "$schemaVersion": 1,
+  "id": "stage-05-rainbow-sky",
+  "title": "무지개 하늘섬",
+  "privateLocalPrototype": true,
+  "logicalSize": {
+    "width": 256,
+    "height": 224
+  },
+  "tileSize": 16,
+  "theme": {
+    "background": "rainbow_sky",
+    "music": "moonlight_bubble_march",
+    "palette": [
+      "#102b46",
+      "#35a7a0",
+      "#8de4d4",
+      "#8fc7ff",
+      "#fff3a8"
+    ]
+  },
+  "legend": {
+    "#": "solid_platform",
+    ".": "empty"
+  },
+  "layout": [
+    "################",
+    "#..............#",
+    "#..##..##..##..#",
+    "#..............#",
+    "#.##........##.#",
+    "#.....####.....#",
+    "#..............#",
+    "#..##..##..##..#",
+    "#..............#",
+    "#.###......###.#",
+    "#......##......#",
+    "#..##......##..#",
+    "#..............#",
+    "####...##...####"
+  ],
+  "playerSpawns": [
+    {
+      "player": 1,
+      "character": "nakkong",
+      "tile": {
+        "x": 2,
+        "y": 12
+      },
+      "placeholderAsset": "nakkong_angel_rabbit"
+    },
+    {
+      "player": 2,
+      "character": "muning",
+      "tile": {
+        "x": 13,
+        "y": 12
+      },
+      "placeholderAsset": "muning_angel_cat"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "ghost-5a",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 2,
+        "y": 10
+      }
+    },
+    {
+      "id": "ghost-5b",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 13,
+        "y": 10
+      }
+    },
+    {
+      "id": "ghost-5c",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 5,
+        "y": 8
+      }
+    },
+    {
+      "id": "ghost-5d",
+      "kind": "ghost_bobblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 10,
+        "y": 8
+      }
+    },
+    {
+      "id": "ghost-5e",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 3,
+        "y": 6
+      }
+    },
+    {
+      "id": "ghost-5f",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 12,
+        "y": 6
+      }
+    },
+    {
+      "id": "ghost-5g",
+      "kind": "ghost_bubblun",
+      "behavior": "patrol",
+      "tile": {
+        "x": 5,
+        "y": 3
+      }
+    },
+    {
+      "id": "ghost-5h",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 10,
+        "y": 3
+      }
+    },
+    {
+      "id": "ghost-5i",
+      "kind": "ghost_bubblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 7,
+        "y": 11
+      }
+    },
+    {
+      "id": "ghost-5j",
+      "kind": "ghost_bobblun",
+      "behavior": "chase",
+      "tile": {
+        "x": 9,
+        "y": 11
+      }
+    }
+  ],
+  "items": [],
+  "airflow": [
+    {
+      "id": "sky-updraft",
+      "tileRect": {
+        "x": 5,
+        "y": 1,
+        "width": 6,
+        "height": 12
+      },
+      "direction": {
+        "x": 0,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 1.4
+    },
+    {
+      "id": "sky-right",
+      "tileRect": {
+        "x": 1,
+        "y": 1,
+        "width": 5,
+        "height": 11
+      },
+      "direction": {
+        "x": 1,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 1.0
+    },
+    {
+      "id": "sky-left",
+      "tileRect": {
+        "x": 10,
+        "y": 1,
+        "width": 5,
+        "height": 11
+      },
+      "direction": {
+        "x": -1,
+        "y": -1
+      },
+      "bubbleSpeedMultiplier": 1.0
+    }
+  ],
+  "rules": {
+    "startingLives": 3,
+    "timeLimitSeconds": 50,
+    "enrageAtSecondsRemaining": 20,
+    "verticalWrap": true,
+    "clearWhenAllEnemiesDefeated": true,
+    "nextStageId": "stage-06-deep-sea-temple"
+  },
+  "tutorial": [
+    {
+      "trigger": "stage_start",
+      "message": "마지막 하늘섬은 기류가 빠르게 교차해요!"
+    }
+  ]
+}

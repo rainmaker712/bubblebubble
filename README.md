@@ -1,61 +1,97 @@
-# BubbleBubble
+# BubbleBubble · Unity
 
-포차코와 마이멜로디가 거품으로 공룡 귀신을 잡는 개인용 로컬 웹 게임 프로토타입입니다.
+낙콩과 무닝의 2인용 거품 액션 게임입니다. **Unity 6.3 LTS / C#**로 실행합니다. 저장소 루트가 Unity 프로젝트이며, 기존 웹 버전은 비교·복구용으로 보존했습니다.
 
-## 바로 실행하기
+## 게임 실행
 
-최초 한 번 의존성을 설치합니다.
-
-```bash
-cd /Users/user/github/bubblebubble
-npm install
-```
-
-이후에는 Python 실행기를 사용할 수 있습니다.
-
-```bash
-cd /Users/user/github/bubblebubble
+```sh
 python3 run_game.py
 ```
 
-브라우저가 자동으로 열리지 않으면 [http://127.0.0.1:4173](http://127.0.0.1:4173)에 접속합니다. 서버를 종료할 때는 터미널에서 `Ctrl+C`를 누릅니다.
+macOS 빌드가 있으면 `Builds/macOS/BubbleBubble.app`을 실행하고, 없으면 Unity Editor를 엽니다.
 
-또는 `npm run dev`로 Vite 개발 서버를 직접 실행할 수 있습니다. 이 게임은 Phaser 4.2.1, TypeScript, Vite로 구성되어 있어 `index.html`을 파일로 직접 열 수 없습니다.
+```sh
+python3 run_game.py --editor          # Unity Editor 열기
+python3 scripts/unity.py doctor       # 설치 위치와 버전 확인
+```
 
-## 조작법
+Unity에서 `Assets/BubbleBubble/Scenes/Main.unity`를 열고 **Play**를 누르세요. 프로젝트 메뉴 `BubbleBubble > Open Game Scene`으로도 열 수 있습니다.
 
-| 캐릭터 | 이동 | 점프 | 거품 |
-|---|---|---|---|
-| 포차코(1P) | `A` / `D` | `W` | `F` |
-| 마이멜로디(2P) | `←` / `→` | `↑` | `/` 또는 `Enter` |
+## 처음 설치하는 컴퓨터
 
-- 공룡 귀신에게 거품을 맞혀 가둔 다음, 갇힌 거품에 캐릭터 몸으로 닿으면 제거됩니다.
-- 발사 직후 전진하는 거품을 적에게 직접 맞혀야 포획할 수 있습니다.
-- 빈 거품은 점프 키를 누른 상태로 위에서 밟으면 튀어 오릅니다.
-- 발판은 아래에서 점프로 통과할 수 있고 위에서 내려올 때 착지합니다.
-- 바닥 구멍으로 떨어지면 화면 위에서 다시 나타나며, 포획 거품도 천장과 바닥을 순환합니다.
-- 공룡 귀신이 떨어뜨리는 `E`, `X`, `I`, `T`를 모두 모으면 5,000점 보너스와 함께 다음 스테이지로 이동합니다.
-- 생명이 모두 소진되면 10초 안에 `C`를 눌러 현재 스테이지를 이어서 할 수 있습니다.
-- `Esc`로 일시정지합니다.
-- 화면 아래 `음악 켜짐/꺼짐` 버튼으로 오리지널 BGM `달빛 방울 행진곡`을 전환할 수 있습니다.
+1. [Unity Hub](https://unity.com/download)를 설치하고 본인 계정의 라이선스를 활성화합니다.
+2. [Unity 6000.3.26f1](https://unity.com/releases/editor/whats-new/6000.3.26f1)를 설치합니다. Apple Silicon Mac은 ARM64 Editor를 선택합니다.
+3. Hub의 **Add project from disk**에서 이 저장소 폴더를 선택합니다.
+4. 첫 임포트 후 `Main` 씬에서 Play를 누릅니다. Node.js나 npm은 필요하지 않습니다.
 
-## 현재 범위
+씬·해상도·입력·빌드 설정은 저장소에 포함되어 있습니다. 설정을 다시 적용하려면 Editor를 닫고 `python3 scripts/unity.py setup`을 실행하거나 `BubbleBubble > Configure Project`를 선택합니다. Editor 설치 경로가 다르면 `UNITY_EDITOR` 환경 변수나 `scripts/unity.py --editor /path/to/Unity`를 사용합니다.
 
-- 난이도와 테마가 달라지는 스테이지 10개: 달빛, 별빛, 유령 탑, 사탕 동굴, 무지개 하늘섬, 심해 신전, 장난감 공장, 얼음 궁전, 화산 심장, 우주 성채
-- 1인 또는 같은 키보드의 2인 로컬 플레이
-- Phaser 4 Arcade Physics, Scene, 카메라, 파티클, 트윈 애니메이션 사용
-- TypeScript strict mode와 Vite 빌드
-- Python은 개발 서버 실행 보조와 향후 백엔드 확장용
-- 공룡 귀신 처치 시 딸기·바나나·쿠키가 등장하며, 먹으면 점수와 캐릭터 크기가 증가
-- 스테이지별 적 수 4~12마리, 버블룬·보블룬 실루엣과 10가지 테마 장식, 서로 다른 발판 색
-- 60초를 기준으로 난이도에 따라 조정된 제한 시간: 70초에서 시작해 마지막 스테이지는 40초
-- 빠른 연사의 물방울, 고속 거품의 불꽃, 이동·점프를 높이는 신발, 공격 한 번을 막는 방패, 10초 동안 날 수 있는 구름 아이템
-- 과일과 간식은 캐릭터 크기를 바꾸지 않고 점수만 제공
-- 주요 캐릭터와 아이템을 2배 내부 해상도로 그리는 고해상도 Canvas 텍스처 사용
-- 고해상도 텍스처와 별도로 물리 판정 크기를 보정하고, 아이템에는 근거리 보조 획득 판정 적용
-- 피격 또는 CONTINUE 이후 3초 동안 무적
-- 시간이 0이 되면 실패 대신 해골 모습의 무적 귀신 고래가 출현하며, 화면 효과와 음악이 위험 모드로 전환
-- EXIT 알파벳은 적 처치당 22% 확률로만 드롭
-- 개인 컴퓨터에서만 사용하는 비공개 프로토타입
+## 조작
 
-설계 결정은 [docs/ADR.md](docs/ADR.md), 스테이지 원본 데이터는 [docs/samples/stage-01.json](docs/samples/stage-01.json)에서 확인할 수 있습니다.
+| 동작 | 1P 낙콩 | 2P 무닝 |
+| --- | --- | --- |
+| 이동 | A / D | ← / → |
+| 점프·구름 비행 | W | ↑ |
+| 거품 발사 | F | . |
+
+- 타이틀에서 `1` / `2` 또는 버튼으로 인원을 선택합니다.
+- `Esc`: 일시정지, `C`: 전원 생명 소진 후 10초 안에 이어하기, `M`: 음악 켜기/끄기.
+- 귀신을 거품에 가둔 후 몸으로 터뜨리고 간식을 모으면 다음 스테이지로 갑니다.
+- 내려올 때 점프 키를 누른 채 빈 거품에 닿으면 거품을 밟아 점프합니다.
+- 1~9탄은 일반 스테이지, 마지막 10탄은 보스전입니다. 입장할 때 번개 왕·불꽃 왕·얼음 왕 중 하나가 무작위로 등장합니다. 불꽃 피해 3, 번개 피해 2, 기본·물 거품 피해 1입니다.
+- 물·불·번개·신발·구름·무지개·별똥별 능력은 획득한 스테이지 안에서만 유지되며, 다음 스테이지로 넘어가거나 목숨을 하나 잃으면 해제됩니다. 공격 속성은 마지막 획득 속성으로 바뀝니다.
+- 방패 1회, 무지개 충돌 보호 10회는 사용하면 소모됩니다. 무지개 거품은 보호 횟수가 0이어도 해당 스테이지에서 목숨을 잃기 전까지 유지됩니다.
+- 별똥별은 발사할 때마다 일반 적 하나를 데려갑니다. 보스·귀신 고래·포획된 적은 대상에서 제외됩니다. 일반 스테이지의 랜덤 아이템에 포함되며, 별똥별을 포함한 특수 아이템 전체가 스테이지당 최대 2개입니다.
+- 아이템은 처음부터 놓여 있지 않습니다. 플레이 시작 후 4~8초 사이에 하나, 그 뒤 8~12초 뒤에 하나가 종류와 위치를 무작위로 정해 나타납니다. 안전한 빈 발판 위치가 없으면 잠시 뒤 다시 시도합니다.
+- **쓰레기통은 나쁜 아이템**입니다. 먹으면 점수 보상 없이 유령고래가 즉시 등장하며, 보스전에서도 소환됩니다. 시간이 줄어드는 것은 아니지만 위험 음악이 시작됩니다.
+- 유령고래는 원작 Skel-Monsta의 흰 몸·붉은 눈·톱니 입을 참고한 2프레임 픽셀 그림으로 변경했습니다.
+- EXIT 글자를 모으면 보너스와 스테이지 건너뛰기를 얻습니다. 살아 있는 보스는 건너뛸 수 없습니다.
+
+## 테스트·빌드
+
+같은 프로젝트의 Editor를 닫은 상태에서 실행하세요.
+
+```sh
+python3 scripts/unity.py test
+python3 scripts/unity.py build --target mac
+```
+
+- Edit Mode: 스테이지별 능력 초기화, 랜덤 등장·상한, 쓰레기통·고래, 랜덤 보스·공격, 포획·이어하기 등 규칙 테스트 17개.
+- Play Mode: 실제 씬 로드, 한글 폰트·셰이더·62개 스프라이트, 10개 스테이지 렌더러와 입력 연결 테스트.
+- 결과와 로그: `TestResults/` (Git 제외).
+- macOS 결과: `Builds/macOS/BubbleBubble.app` (Git 제외).
+- Windows/Web 빌드 메뉴와 명령도 제공합니다. 해당 플랫폼 모듈을 Hub에서 설치해야 하며, 이번 전환의 실행 검증 대상은 macOS입니다.
+
+## 프로젝트 구성
+
+| 위치 | 역할 |
+| --- | --- |
+| `Assets/BubbleBubble/Scenes/Main.unity` | 시작 씬 |
+| `Assets/BubbleBubble/Runtime/GameWorld.cs` | 고정 시간 간격의 게임 시뮬레이션 |
+| `Assets/BubbleBubble/Runtime/GameModel.cs` | 스테이지·캐릭터·아이템 데이터와 규칙 |
+| `Assets/BubbleBubble/Runtime/GameApp.cs` | Unity 화면·카메라·키보드·한글 UI |
+| `Assets/BubbleBubble/Runtime/MoonlightAudio.cs` | 원작 멜로디 기반 음악 합성·설정 저장 |
+| `Assets/BubbleBubble/Resources/Stages/` | **Unity에서 사용하는** 스테이지 JSON 10개 |
+| `Assets/BubbleBubble/Resources/Art/` | 기존·추가 픽셀 그림 PNG 62개 |
+| `Assets/BubbleBubble/Resources/Rainbow.shader` | 무지개 거품·캐릭터 셰이더 |
+| `Assets/BubbleBubble/Editor/ProjectSetup.cs` | 임포트 규칙·씬 구성·빌드 메뉴 |
+| `Assets/BubbleBubble/Tests/` | Unity Test Framework 테스트 |
+
+스테이지를 수정할 때는 `Resources/Stages` 파일을 편집하세요. `docs/samples`는 이전 웹 버전 데이터이며 자동 동기화하지 않습니다. 자세한 전환 범위와 설계는 [Unity 전환 문서](docs/UNITY_MIGRATION.md)를 참고하세요.
+
+## 기존 웹 버전
+
+`src/`, `index.html`, npm 설정은 기존 작업을 보존하기 위해 남겨두었습니다. Unity 앱에서는 읽거나 실행하지 않습니다.
+
+```sh
+npm install
+python3 run_game.py --web
+```
+
+이전 설명은 [웹 버전 기록](docs/archive/WEB_README.md)에 있습니다. `npm run dev`, `npm test`, `npm run build`는 웹 버전 전용입니다.
+
+## 리소스
+
+캐릭터와 픽셀 그림은 기존 프로젝트의 `characters.ts`·`arcadeArt.ts`에서 내보냈습니다. 재생성 도구는 `scripts/export_unity_art.mjs`이며, Unity 실행에는 필요하지 않습니다. 한글 폰트는 [Google Fonts Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr)의 500 굵기 정적 인스턴스입니다. 배포 라이선스는 `Assets/BubbleBubble/Resources/Fonts/OFL.txt`에 포함되어 있습니다.
+
+리뷰 4~8번 반영 내역과 그림 참고 자료는 [10/22 추가 구현 기록](docs/updates/review-10-22-implementation.md)에 정리했습니다.

@@ -24,8 +24,8 @@
     "####...##...####"
   ],
   "playerSpawns": [
-    { "player": 1, "character": "pochacco", "tile": { "x": 2, "y": 12 }, "placeholderAsset": "white_dog_shape" },
-    { "player": 2, "character": "my_melody", "tile": { "x": 13, "y": 12 }, "placeholderAsset": "pink_rabbit_shape" }
+    { "player": 1, "character": "nakkong", "tile": { "x": 2, "y": 12 }, "placeholderAsset": "nakkong_angel_rabbit" },
+    { "player": 2, "character": "muning", "tile": { "x": 13, "y": 12 }, "placeholderAsset": "muning_angel_cat" }
   ],
   "enemies": [
     { "id": "ghost-bubblun-3a", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 3, "y": 9 }, "placeholderAsset": "green_dinosaur_ghost_shape" },
@@ -37,10 +37,7 @@
     { "id": "ghost-bubblun-3d", "kind": "ghost_bubblun", "behavior": "chase", "tile": { "x": 5, "y": 11 }, "placeholderAsset": "green_dinosaur_ghost_shape" },
     { "id": "ghost-bobblun-3d", "kind": "ghost_bobblun", "behavior": "chase", "tile": { "x": 9, "y": 11 }, "placeholderAsset": "blue_dinosaur_ghost_shape" }
   ],
-  "items": [
-    { "id": "fire-bubble-3", "kind": "fire", "tile": { "x": 8, "y": 7 } },
-    { "id": "speed-shoes-3", "kind": "shoes", "tile": { "x": 3, "y": 8 } }
-  ],
+  "items": [{"id": "fire-bubble-3", "kind": "fire", "tile": {"x": 8, "y": 7}}, {"id": "speed-shoes-3", "kind": "shoes", "tile": {"x": 3, "y": 8}}],
   "airflow": [
     { "id": "tower-updraft", "tileRect": { "x": 6, "y": 1, "width": 4, "height": 12 }, "direction": { "x": 0, "y": -1 }, "bubbleSpeedMultiplier": 1.2 },
     { "id": "left-crosswind", "tileRect": { "x": 1, "y": 2, "width": 5, "height": 9 }, "direction": { "x": -1, "y": -1 }, "bubbleSpeedMultiplier": 0.8 },
