@@ -28,11 +28,11 @@
     "#..............#",
     "#..###....###..#",
     "#..............#",
-    "#.##....##....##",
+    "#.......##....##",
+    "#.##........##.#",
     "#..............#",
-    "#....######....#",
     "#..............#",
-    "##....##....##.#",
+    "##...........#.#",
     "#..............#",
     "#..##......##..#",
     "#......##......#",
@@ -63,8 +63,8 @@
       "kind": "ghost_bubblun",
       "behavior": "chase",
       "tile": {
-        "x": 2,
-        "y": 10
+        "x": 3,
+        "y": 4
       }
     },
     {
@@ -72,80 +72,8 @@
       "kind": "ghost_bobblun",
       "behavior": "chase",
       "tile": {
-        "x": 13,
-        "y": 10
-      }
-    },
-    {
-      "id": "g6c",
-      "kind": "ghost_bubblun",
-      "behavior": "patrol",
-      "tile": {
-        "x": 5,
-        "y": 8
-      }
-    },
-    {
-      "id": "g6d",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 10,
-        "y": 8
-      }
-    },
-    {
-      "id": "g6e",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 3,
-        "y": 6
-      }
-    },
-    {
-      "id": "g6f",
-      "kind": "ghost_bobblun",
-      "behavior": "patrol",
-      "tile": {
         "x": 12,
-        "y": 6
-      }
-    },
-    {
-      "id": "g6g",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 5,
-        "y": 3
-      }
-    },
-    {
-      "id": "g6h",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 10,
-        "y": 3
-      }
-    },
-    {
-      "id": "g6i",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 7,
-        "y": 11
-      }
-    },
-    {
-      "id": "g6j",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 9,
-        "y": 11
+        "y": 4
       }
     }
   ],
@@ -168,11 +96,30 @@
   ],
   "rules": {
     "startingLives": 3,
-    "timeLimitSeconds": 48,
+    "timeLimitSeconds": 100,
     "enrageAtSecondsRemaining": 19,
     "verticalWrap": true,
-    "clearWhenAllEnemiesDefeated": true,
-    "nextStageId": "stage-07-toy-factory"
+    "clearWhenAllEnemiesDefeated": false,
+    "nextStageId": null,
+    "clearWhenBossDefeated": true
   },
-  "tutorial": []
+  "tutorial": [
+    {
+      "trigger": "stage_start",
+      "message": "6/6 보스전! 왕을 거품으로 공격하세요."
+    }
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 24,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
 }

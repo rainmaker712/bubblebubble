@@ -28,12 +28,12 @@
     "#..............#",
     "#..##..##..##..#",
     "#..............#",
-    "#.##........##.#",
-    "#.....####.....#",
     "#..............#",
-    "#..##..##..##..#",
+    "#.##..####..##.#",
     "#..............#",
-    "#.###......###.#",
+    "#..............#",
+    "#..............#",
+    "#.#..........#.#",
     "#......##......#",
     "#..##......##..#",
     "#..............#",
@@ -65,8 +65,8 @@
       "kind": "ghost_bubblun",
       "behavior": "chase",
       "tile": {
-        "x": 2,
-        "y": 10
+        "x": 3,
+        "y": 4
       }
     },
     {
@@ -74,80 +74,8 @@
       "kind": "ghost_bobblun",
       "behavior": "chase",
       "tile": {
-        "x": 13,
-        "y": 10
-      }
-    },
-    {
-      "id": "ghost-5c",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 5,
-        "y": 8
-      }
-    },
-    {
-      "id": "ghost-5d",
-      "kind": "ghost_bobblun",
-      "behavior": "patrol",
-      "tile": {
-        "x": 10,
-        "y": 8
-      }
-    },
-    {
-      "id": "ghost-5e",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 3,
-        "y": 6
-      }
-    },
-    {
-      "id": "ghost-5f",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
         "x": 12,
-        "y": 6
-      }
-    },
-    {
-      "id": "ghost-5g",
-      "kind": "ghost_bubblun",
-      "behavior": "patrol",
-      "tile": {
-        "x": 5,
-        "y": 3
-      }
-    },
-    {
-      "id": "ghost-5h",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 10,
-        "y": 3
-      }
-    },
-    {
-      "id": "ghost-5i",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 7,
-        "y": 11
-      }
-    },
-    {
-      "id": "ghost-5j",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 9,
-        "y": 11
+        "y": 4
       }
     }
   ],
@@ -198,16 +126,30 @@
   ],
   "rules": {
     "startingLives": 3,
-    "timeLimitSeconds": 50,
+    "timeLimitSeconds": 95,
     "enrageAtSecondsRemaining": 20,
     "verticalWrap": true,
-    "clearWhenAllEnemiesDefeated": true,
-    "nextStageId": "stage-06-deep-sea-temple"
+    "clearWhenAllEnemiesDefeated": false,
+    "nextStageId": "stage-06-deep-sea-temple",
+    "clearWhenBossDefeated": true
   },
   "tutorial": [
     {
       "trigger": "stage_start",
-      "message": "마지막 하늘섬은 기류가 빠르게 교차해요!"
+      "message": "5/6 보스전! 왕을 거품으로 공격하세요."
     }
-  ]
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 21,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
 }

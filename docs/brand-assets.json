@@ -1,0 +1,102 @@
+[
+  {
+    "key": "tokyo",
+    "brand": "도쿄빙수",
+    "product": "방울방울 토마토 빙수",
+    "page": "https://www.tokyobingsu.co.kr/23",
+    "url": "https://cdn.imweb.me/thumbnail/20200304/c33d9c3816849.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/tokyo.png",
+    "sha256": "30e3fddf8ad20bff97755b86f7832289f6df0c6ae9ccce5512aea6961d49d2df",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "cake",
+    "brand": "파리바게뜨",
+    "product": "파베 초콜릿 케이크",
+    "page": "https://www.paris.co.kr/products/",
+    "url": "https://d2afncas1tel3t.cloudfront.net/wp-content/uploads/2026/09/파베-초콜릿-케이크-600x600.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/cake.png",
+    "sha256": "203450a9582406c099970cf5ea571d31faed7847c7f666204afdef14b93e18ac",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "icecream",
+    "brand": "배스킨라빈스",
+    "product": "슈팅스타",
+    "page": "https://www.baskinrobbins.co.kr/menu/list.php?category=A",
+    "url": "https://www.baskinrobbins.co.kr/upload/product/main/a4b71e8b99743c93a7824331850b0a3d.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/icecream.png",
+    "sha256": "7cb1515a5b5c67f67075ea004c9602ad4bba15930c81f0b0427b798448f68bbd",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "macaron",
+    "brand": "배스킨라빈스",
+    "product": "미니 아이스 마카롱 세트 시그니처",
+    "page": "https://www.baskinrobbins.co.kr/menu/list.php?category=E",
+    "url": "https://www.baskinrobbins.co.kr/upload/product/main/fb2eded67b577334b741a06964184eb1.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/macaron.png",
+    "sha256": "30cd265bd56a4416185ee985f123d0cddd3075ea6896753ad8692484efed8bbe",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "aquarium",
+    "brand": "롯데월드 아쿠아리움",
+    "product": "아쿠아리움",
+    "page": "https://aquarium.lotteworld.com/",
+    "url": "https://aquarium.lotteworld.com/og/og_img_aquarium.jpg",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/aquarium.jpg",
+    "sha256": "24bd3c45af56e6d11dba75e6f9b6abda15daf81241ade65499ed6dc29a5631bf",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "watermelon",
+    "brand": "롯데 수박바",
+    "product": "수박바",
+    "page": "https://m.lottesweetmall.com/product/detail.html?product_no=4239",
+    "url": "https://m.lottesweetmall.com/web/product/big/202504/e7ed633a17efe7c50ae03ef1cb6af387.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/watermelon.png",
+    "sha256": "c98040123dc73694b3bfa3a0895ff8a9687de4be6c08c9d9f3595030808a9a66",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "toys",
+    "brand": "LEGO",
+    "product": "클래식 컬러 브릭",
+    "page": "https://www.lego.com/ko-kr/product/creative-colorful-bricks-11045",
+    "url": "https://www.lego.com/cdn/cs/set/assets/blt97ecb8248913cc79/bltf57afbfafe31c236-11045_Prod_en-gb.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/toys.png",
+    "sha256": "fc935ba672277465d2eb1800b4fa07eb1c6a1477798d73780791ef9e43c9dcae",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "mint",
+    "brand": "배스킨라빈스",
+    "product": "민트 초콜릿 칩",
+    "page": "https://www.baskinrobbins.co.kr/menu/list.php?category=A",
+    "url": "https://www.baskinrobbins.co.kr/upload/product/main/fb92d70dee836652115c4f3b13175541.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/mint.png",
+    "sha256": "5e6a7974b16b7700dbdef82f5675b2292a854bd05b599e0a180eb510f450e881",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "lava",
+    "brand": "LEGO Minecraft",
+    "product": "네더 용암 전투",
+    "page": "https://www.lego.com/ko-kr/product/the-nether-lava-battle-21266",
+    "url": "https://www.lego.com/cdn/cs/set/assets/bltefe54d753f685679/21266_Prod_en-gb.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/lava.png",
+    "sha256": "c6b35a11a22671731a79300b695373a097d00e3a67cbce107232b1ed21a35525",
+    "retrieved": "2026-10-25"
+  },
+  {
+    "key": "castle",
+    "brand": "LEGO Creator",
+    "product": "중세 마기사의 성",
+    "page": "https://www.lego.com/ko-kr/product/medieval-horse-knight-castle-31168",
+    "url": "https://www.lego.com/cdn/cs/set/assets/blt704380e8e257025f/31168_Prod.png",
+    "file": "Assets/BubbleBubble/Resources/Art/Brands/castle.png",
+    "sha256": "1bfb834cad17561431c4d7ae018daeea3be7ddccc2d20a080d819525195591b4",
+    "retrieved": "2026-10-25"
+  }
+]

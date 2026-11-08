@@ -29,11 +29,11 @@
     "#..###.....###.#",
     "#..............#",
     "#......###.....#",
-    "#.###..........#",
-    "#..........###.#",
-    "#....###.......#",
+    "#.###.......##.#",
+    "#............#.#",
     "#..............#",
-    "#.......###....#",
+    "#..............#",
+    "#..............#",
     "#.###..........#",
     "#..........###.#",
     "#..............#",
@@ -66,7 +66,7 @@
       "behavior": "patrol",
       "tile": {
         "x": 3,
-        "y": 9
+        "y": 4
       },
       "placeholderAsset": "green_dinosaur_ghost_shape"
     },
@@ -75,50 +75,10 @@
       "kind": "ghost_bobblun",
       "behavior": "chase",
       "tile": {
-        "x": 11,
-        "y": 5
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-2b",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 7,
-        "y": 3
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bubblun-2b",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 4,
+        "x": 12,
         "y": 4
       },
-      "placeholderAsset": "green_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-2c",
-      "kind": "ghost_bobblun",
-      "behavior": "patrol",
-      "tile": {
-        "x": 12,
-        "y": 8
-      },
       "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bubblun-2c",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 8,
-        "y": 11
-      },
-      "placeholderAsset": "green_dinosaur_ghost_shape"
     }
   ],
   "items": [],
@@ -154,16 +114,30 @@
   ],
   "rules": {
     "startingLives": 3,
-    "timeLimitSeconds": 65,
+    "timeLimitSeconds": 80,
     "enrageAtSecondsRemaining": 30,
     "verticalWrap": true,
-    "clearWhenAllEnemiesDefeated": true,
-    "nextStageId": "stage-03-ghost-tower"
+    "clearWhenAllEnemiesDefeated": false,
+    "nextStageId": "stage-03-ghost-tower",
+    "clearWhenBossDefeated": true
   },
   "tutorial": [
     {
       "trigger": "stage_start",
-      "message": "공룡 귀신이 발판 아래까지 쫓아와요!"
+      "message": "2/6 보스전! 왕을 거품으로 공격하세요."
     }
-  ]
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 14,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
 }

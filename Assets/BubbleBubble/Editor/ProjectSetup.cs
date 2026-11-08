@@ -18,6 +18,8 @@ namespace BubbleBubble.Editor
             importer.spritePixelsPerUnit=2;importer.filterMode=FilterMode.Point;
             importer.textureCompression=TextureImporterCompression.Uncompressed;
             importer.mipmapEnabled=false;importer.alphaIsTransparency=true;importer.maxTextureSize=2048;
+            if(assetPath.Contains("/Art/Brands/"))
+            { importer.filterMode=FilterMode.Bilinear;importer.maxTextureSize=1024; }
         }
     }
     [InitializeOnLoad]

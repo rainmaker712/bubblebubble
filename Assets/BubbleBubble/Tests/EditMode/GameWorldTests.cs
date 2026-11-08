@@ -6,7 +6,7 @@ namespace BubbleBubble.Tests
 {
     public class GameWorldTests
     {
-        static StageData[] Stages() => Enumerable.Range(1, 10)
+        static StageData[] Stages() => Enumerable.Range(1, GameRules.CampaignStageCount)
             .Select(i => JsonUtility.FromJson<StageData>(Resources.Load<TextAsset>($"Stages/stage-{i:00}").text)).ToArray();
         static GameWorld Game(int count = 1, int stage = 1)
         {
@@ -37,7 +37,7 @@ namespace BubbleBubble.Tests
             Pickup(g,"poop");Assert.IsTrue(g.FishCurse);Assert.IsNull(g.Whale);
             Assert.AreEqual(score,g.Score);Assert.Greater(g.TimeLeft,time-.1f);
             Assert.AreEqual(0,g.Enemies.Count(e=>e.kind=="whale_fish"));
-            SafeAdvance(g,g.TimeLeft+1);
+            Pickup(g,"trash");
             Assert.IsNotNull(g.Whale);Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
             var fish=g.Enemies.First(e=>e.kind=="whale_fish");
             var b=g.Shoot(g.Players[0]);g.Capture(b,fish);Assert.IsTrue(fish.captured);
@@ -46,7 +46,7 @@ namespace BubbleBubble.Tests
         }
         [Test] public void PoopWorksBeforeOrAfterTrashOnRegularAndBossStagesWithoutDuplicates()
         {
-            foreach(int stage in new[]{0,9})foreach(bool poopFirst in new[]{true,false})
+            foreach(int stage in new[]{0,5})foreach(bool poopFirst in new[]{true,false})
             {
                 var g=Game(2,stage);
                 Pickup(g,poopFirst?"poop":"trash");Pickup(g,poopFirst?"trash":"poop");
@@ -67,10 +67,11 @@ namespace BubbleBubble.Tests
             Pickup(g,"trash");Assert.AreEqual(3,g.Enemies.Count(e=>e.kind=="whale_fish"));
             g.Start(1);Assert.IsFalse(g.FishCurse);
         }
-        [Test] public void TenStagesHaveArtCharactersAndCappedPowerups()
+        [Test] public void SixStagesHaveArtCharactersAndCappedPowerups()
         {
             var stages = Stages();
-            Assert.AreEqual(10, stages.Length);
+            Assert.AreEqual(6, stages.Length);
+            Assert.AreEqual(6,Resources.LoadAll<TextAsset>("Stages").Length);
             foreach (var stage in stages)
             {
                 Assert.AreEqual(14, stage.layout.Length);
@@ -131,7 +132,7 @@ namespace BubbleBubble.Tests
         }
         [Test] public void BossUsesElementDamageAndBlocksExitUntilDefeated()
         {
-            var g = Game(2, 9);Assert.AreEqual(36, g.Boss.hp);
+            var g = Game(2, 5);Assert.AreEqual(36, g.Boss.hp);
             g.CompleteStage();Assert.AreEqual(GamePhase.Playing, g.Phase);
             Assert.AreEqual(1, GameRules.BossDamage(null));
             Assert.AreEqual(2, GameRules.BossDamage("lightning"));
@@ -142,7 +143,7 @@ namespace BubbleBubble.Tests
         }
         [Test] public void PauseFreezesSimulationAndContinueKeepsBossDamage()
         {
-            var g = Game(1, 9);g.HitBoss("fire");g.TogglePause();
+            var g = Game(1, 5);g.HitBoss("fire");g.TogglePause();
             float left = g.TimeLeft;g.Tick(1, new PlayerInput[2]);Assert.AreEqual(left, g.TimeLeft);
             g.TogglePause();var p = g.Players[0];
             for(int i=0;i<3;i++){p.invulnerable=0;g.Hurt(p);}
@@ -168,17 +169,24 @@ namespace BubbleBubble.Tests
             foreach(var p in g.Players)p.invulnerable=10000;
             for(float t=0;t<seconds;t+=.04f)g.Tick(.04f,new PlayerInput[2]);
         }
-        [Test] public void OnlyFinalStageHasBossAndFirstStageHasRegularEnemies()
+        [TestCase(1)] [TestCase(2)]
+        public void SixBossesMustBeDefeatedInOrderBeforeVictory(int players)
         {
-            var stages=Stages();
-            Assert.IsTrue(stages.Take(9).All(s=>s.boss==null || s.boss.hp==0));
-            Assert.Greater(stages[0].enemies.Length,0);
-            Assert.Greater(stages[9].boss.hp,0);
-            Assert.AreEqual(0,stages[9].enemies.Length);
-            var g=Game(1,0);Assert.IsNull(g.Boss);
-            foreach(var e in g.Enemies){e.defeated=true;e.alive=false;}
-            g.Tick(.04f,new PlayerInput[2]);Assert.AreEqual(GamePhase.StageClear,g.Phase);
-            g.Tick(1.3f,new PlayerInput[2]);Assert.AreEqual(1,g.StageIndex);
+            var g=Game(players,0);int previousHp=0;
+            for(int stage=0;stage<6;stage++)
+            {
+                Assert.AreEqual(stage,g.StageIndex);Assert.IsNotNull(g.Boss);
+                Assert.Greater(g.Boss.maxHp,previousHp);previousHp=g.Boss.maxHp;
+                g.CompleteStage();Assert.AreEqual(GamePhase.Playing,g.Phase);
+                foreach(var e in g.Enemies){e.defeated=true;e.alive=false;}
+                g.Tick(.01f,new PlayerInput[2]);Assert.AreEqual(GamePhase.Playing,g.Phase);
+                while(g.Boss.hp>0)g.HitBoss("fire");
+                g.Tick(.01f,new PlayerInput[2]);
+                if(stage<5)
+                { Assert.AreEqual(GamePhase.StageClear,g.Phase);g.Tick(1.3f,new PlayerInput[2]); }
+                else Assert.AreEqual(GamePhase.Victory,g.Phase);
+            }
+            Assert.AreEqual(30000,g.Score);
         }
         [Test] public void ItemsAppearDuringPlayRatherThanAtStageLoadAndPauseFreezesSpawning()
         {
@@ -195,7 +203,7 @@ namespace BubbleBubble.Tests
                 Assert.AreEqual('#',g.Stage.layout[y+1][x]);
             }
         }
-        [Test] public void ItemRollsVaryAcrossSeedsAndIncludeTrashAndStars()
+        [Test] public void BossItemRollsVaryAcrossSeedsAndIncludeAttackPowers()
         {
             var kinds=new System.Collections.Generic.HashSet<string>();
             var positions=new System.Collections.Generic.HashSet<string>();
@@ -204,12 +212,12 @@ namespace BubbleBubble.Tests
                 var g=new GameWorld(Stages(),seed);g.Start(1);SafeAdvance(g,25);
                 foreach(var item in g.Items){kinds.Add(item.kind);positions.Add(item.x+","+item.originY);}
             }
-            Assert.IsTrue(kinds.Contains("trash"));Assert.IsTrue(kinds.Contains("shootingStar"));Assert.IsTrue(kinds.Contains("poop"));
+            Assert.IsTrue(kinds.Contains("trash"));Assert.IsTrue(kinds.Contains("fire"));Assert.IsTrue(kinds.Contains("lightning"));Assert.IsFalse(kinds.Contains("shootingStar"));Assert.IsTrue(kinds.Contains("poop"));
             Assert.Greater(kinds.Count,4);Assert.Greater(positions.Count,4);
         }
         [Test] public void TrashSummonsOneWhaleImmediatelyWithoutScoreOrTimerLoss()
         {
-            foreach(int stage in new[]{0,9})
+            foreach(int stage in new[]{0,5})
             {
                 var g=Game(2,stage);var p=g.Players[0];int score=g.Score;
                 g.Items.Add(new Drop{kind="trash",power=true,x=p.x,y=p.y,originY=p.y});
@@ -221,9 +229,10 @@ namespace BubbleBubble.Tests
                 g.LoadStage(1);Assert.IsNull(g.Whale);Assert.IsFalse(g.Danger);
             }
         }
-        [Test] public void TimeoutStillSpawnsWhaleAndContinueKeepsIt()
+        [Test] public void BossTimeoutKeepsArenaAndTrashWhaleSurvivesContinue()
         {
-            var g=Game();SafeAdvance(g,g.TimeLeft+1);Assert.IsNotNull(g.Whale);
+            var g=Game();SafeAdvance(g,g.TimeLeft+1);Assert.IsNull(g.Whale);
+            Assert.AreEqual(GamePhase.Playing,g.Phase);Pickup(g,"trash");Assert.IsNotNull(g.Whale);
             var p=g.Players[0];for(int i=0;i<3;i++){p.invulnerable=0;g.Hurt(p);}
             g.Tick(.01f,new PlayerInput[2]);g.Continue();Assert.IsNotNull(g.Whale);
         }
@@ -232,7 +241,7 @@ namespace BubbleBubble.Tests
             var arts=new System.Collections.Generic.HashSet<string>();
             for(int seed=0;seed<20;seed++)
             {
-                var g=new GameWorld(Stages(),seed);g.Start(1);g.LoadStage(9);arts.Add(g.Boss.art);
+                var g=new GameWorld(Stages(),seed);g.Start(1);g.LoadStage(5);arts.Add(g.Boss.art);
                 var boss=g.Boss;g.HitBoss("fire");var p=g.Players[0];
                 for(int i=0;i<3;i++){p.invulnerable=0;g.Hurt(p);}g.Tick(.01f,new PlayerInput[2]);g.Continue();
                 Assert.AreSame(boss,g.Boss);Assert.AreEqual(21,g.Boss.hp);
@@ -251,7 +260,7 @@ namespace BubbleBubble.Tests
         {
             foreach(var kind in new[]{"lightning","fire","ice"})
             {
-                var g=Game(1,9);g.Boss.kind=kind;g.Boss.hp=12;g.Boss.attackIn=0;
+                var g=Game(1,5);g.Boss.kind=kind;g.Boss.hp=12;g.Boss.attackIn=0;
                 g.Tick(.01f,new PlayerInput[2]);
                 Assert.AreEqual(kind=="lightning"?2:5,g.Hazards.Count);
                 Assert.IsTrue(g.Hazards.All(h=>h.kind==kind && !h.Active));

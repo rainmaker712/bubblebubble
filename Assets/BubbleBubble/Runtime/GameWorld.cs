@@ -84,7 +84,7 @@ namespace BubbleBubble
                 Boss.hp = Boss.maxHp = Stage.boss.hp + (count == 2 ? 12 : 0); Boss.halfX = 35; Boss.halfY = 36;
             }
             Phase = GamePhase.Playing;
-            Tell(Boss != null ? $"마지막 대결! {Boss.displayName} 등장!" : $"STAGE {index + 1} · {Stage.title}", 2.2f);
+            Tell(Boss != null ? $"{(index==Stages.Length-1 ? "최종" : (index+1)+"탄")} 대결! {Boss.displayName} 등장!" : $"STAGE {index + 1} · {Stage.title}", 2.2f);
         }
         public void TogglePause()
         {

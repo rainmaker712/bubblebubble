@@ -62,14 +62,67 @@ namespace BubbleBubble.Tests
             }
             LogAssert.NoUnexpectedReceived();
         }
+        static void SetStoryTime(GameApp app,float seconds)
+        {
+            typeof(GameApp).GetField("storyAnimationTime",System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic).SetValue(app,seconds);
+        }
+
+        [UnityTest]
+        public IEnumerator AnimatedPrologueResetsAndWaitsForNarrationAndFinalConfirmation()
+        {
+            yield return SceneManager.LoadSceneAsync("Main");yield return null;
+            var app=Object.FindFirstObjectByType<GameApp>();app.OpenStory(2);
+            yield return null;
+            Assert.Greater(app.StoryProgress,0);
+            SetStoryTime(app,100);
+            yield return null;
+            Assert.AreEqual(0,app.StoryPage,"Never interrupt narration to advance.");
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;
+            Assert.AreEqual(1,app.StoryPage);
+            Assert.Less(app.StoryProgress,.1f);
+
+            app.AutoStoryAdvance=false;
+            SetStoryTime(app,100);
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;
+            Assert.AreEqual(1,app.StoryPage,"Manual mode keeps the current shot.");
+            Assert.AreEqual(1,app.StoryProgress);
+            app.PlayStoryVoice();Assert.AreEqual(0,app.StoryProgress);
+            SetStoryTime(app,5);
+            app.PreviousStory();Assert.AreEqual(0,app.StoryPage);Assert.AreEqual(0,app.StoryProgress);
+
+            app.AutoStoryAdvance=true;
+            while(app.StoryPage<app.StoryPageCount-1)app.AdvanceStory();
+            SetStoryTime(app,100);
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;
+            Assert.IsTrue(app.ShowingStory);Assert.AreEqual(GamePhase.Menu,app.World.Phase);
+            app.AdvanceStory();
+            Assert.AreEqual(GamePhase.Playing,app.World.Phase);Assert.AreEqual(2,app.World.Players.Count);
+            LogAssert.NoUnexpectedReceived();
+        }
+
         [UnityTest]
         public IEnumerator FinalBossVictoryShowsEndingOnceAndKeepsFinalScore()
         {
             yield return SceneManager.LoadSceneAsync("Main");yield return null;
             var app=Object.FindFirstObjectByType<GameApp>();app.Begin(1);
-            app.World.LoadStage(9);
-            while(app.World.Boss.hp>0)app.World.HitBoss("fire");
-            app.World.Tick(1f/60,new PlayerInput[2]);yield return null;yield return null;
+            Assert.AreEqual(6,app.World.Stages.Length);
+            for(int stage=0;stage<6;stage++)
+            {
+                Assert.AreEqual(stage,app.World.StageIndex);
+                Assert.IsFalse(app.ShowingEnding);
+                while(app.World.Boss.hp>0)app.World.HitBoss("fire");
+                app.World.Tick(1f/60,new PlayerInput[2]);yield return null;yield return null;
+                if(stage<5)
+                {
+                    Assert.AreEqual(GamePhase.StageClear,app.World.Phase);
+                    Assert.IsFalse(app.ShowingEnding,"Earlier bosses must not open the ending.");
+                    app.World.Tick(1.3f,new PlayerInput[2]);yield return null;
+                }
+            }
             Assert.AreEqual(GamePhase.Victory,app.World.Phase);
             Assert.IsTrue(app.ShowingEnding);Assert.AreEqual(4,app.StoryPageCount);
             int score=app.World.Score;
@@ -87,6 +140,63 @@ namespace BubbleBubble.Tests
             Assert.AreEqual("story-01",app.CurrentStoryVoice.name);
             LogAssert.NoUnexpectedReceived();
         }
+        [UnityTest]
+        public IEnumerator EndingAnimationAdvancesReplaysAndWaitsOnLastPage()
+        {
+            yield return SceneManager.LoadSceneAsync("Main");yield return null;
+            var app=Object.FindFirstObjectByType<GameApp>();app.Begin(2);app.World.LoadStage(5);
+            while(app.World.Boss.hp>0)app.World.HitBoss("fire");
+            app.World.Tick(1f/60,new PlayerInput[2]);yield return null;yield return null;
+            int score=app.World.Score;
+            Assert.IsTrue(app.ShowingEnding);Assert.Greater(app.StoryProgress,0);
+            SetStoryTime(app,100);yield return null;
+            Assert.AreEqual(0,app.StoryPage,"Wait for narration before advancing.");
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;Assert.AreEqual(1,app.StoryPage);Assert.Less(app.StoryProgress,.1f);
+            app.AutoStoryAdvance=false;
+            SetStoryTime(app,100);
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;Assert.AreEqual(1,app.StoryPage);
+            app.PlayStoryVoice();Assert.AreEqual(0,app.StoryProgress);
+            SetStoryTime(app,5);app.PreviousStory();Assert.AreEqual(0,app.StoryProgress);
+            app.AutoStoryAdvance=true;
+            // Exercise early, middle and completed poses of all four shots through OnGUI.
+            for(int page=0;page<4;page++)
+            {
+                foreach(float fraction in new[]{.15f,.5f,.9f})
+                { SetStoryTime(app,app.CurrentStoryVoice.length*fraction);yield return null;yield return null; }
+                if(page<3)app.AdvanceStory();
+            }
+            SetStoryTime(app,100);
+            app.GetComponents<AudioSource>().Single(source=>source.clip==app.CurrentStoryVoice).Stop();
+            yield return null;Assert.IsTrue(app.ShowingEnding);Assert.AreEqual(3,app.StoryPage);
+            app.AdvanceStory();yield return null;
+            Assert.IsFalse(app.ShowingStory);Assert.AreEqual(GamePhase.Victory,app.World.Phase);
+            Assert.AreEqual(score,app.World.Score);
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator EveryStageLoadsItsBrandedBackdropBehindGameplay()
+        {
+            yield return SceneManager.LoadSceneAsync("Main");yield return null;
+            var app=Object.FindFirstObjectByType<GameApp>();app.Begin(1);
+            string[] keys={"tokyo","cake","icecream","macaron","aquarium","watermelon"};
+            Directory.CreateDirectory("TestResults");
+            for(int stage=0;stage<6;stage++)
+            {
+                app.World.LoadStage(stage);yield return null;yield return null;
+                var backdrop=GameObject.Find("Brand hero").GetComponent<SpriteRenderer>();
+                Assert.AreEqual(keys[stage],backdrop.sprite.name);
+                Assert.Less(backdrop.sortingOrder,-5,"Brand photos must stay behind solid platforms and actors.");
+                Assert.AreEqual(FilterMode.Bilinear,backdrop.sprite.texture.filterMode);
+                var scale=backdrop.transform.localScale;
+                Assert.AreEqual(scale.x,scale.y,.001f,"Product photos must retain their aspect ratio.");
+                CaptureWorld("brand-stage-"+(stage+1).ToString("00")+".png");
+            }
+            LogAssert.NoUnexpectedReceived();
+        }
+
         [UnityTest]
         public IEnumerator NativeSceneRendersAllStagesAndPowers()
         {
@@ -106,11 +216,11 @@ namespace BubbleBubble.Tests
             for(int i=0;i<5;i++)yield return null;
             app.Begin(2);
             for(int i=0;i<5;i++)yield return null;
-            Assert.IsNull(app.World.Boss);
+            Assert.IsNotNull(app.World.Boss);
             Assert.Greater(Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None).Length,50);
             CaptureWorld("unity-first-stage-world.png");
             for(int i=0;i<5;i++)yield return null;
-            for(int stage=1;stage<9;stage++)
+            for(int stage=1;stage<6;stage++)
             {
                 app.World.LoadStage(stage);var p=app.World.Players[0];
                 app.World.GrantPower(p,"rainbow");app.World.GrantPower(p,"fire");app.World.GrantPower(p,"shootingStar");
@@ -121,12 +231,12 @@ namespace BubbleBubble.Tests
                 if(stage==1)CaptureWorld("unity-rainbow-star-world.png");
                 if(stage<6)CaptureWorld("unity-food-stage-"+(stage+1)+".png");
             }
-            app.World.LoadStage(9);
+            app.World.LoadStage(5);
             Assert.AreEqual(36,app.World.Boss.maxHp);
             // Random selection is covered by seeded EditMode tests; exercise each rendering fixture deterministically here.
             foreach(var kind in new[]{"lightning","fire","ice"})
             {
-                app.World.LoadStage(9);var boss=app.World.Boss;boss.kind=kind;
+                app.World.LoadStage(5);var boss=app.World.Boss;boss.kind=kind;
                 boss.art=kind=="lightning"?"boss-king":kind=="fire"?"boss-ember-king":"boss-frost-king";
                 boss.attackIn=0;
                 for(int frame=0;frame<5;frame++)yield return null;

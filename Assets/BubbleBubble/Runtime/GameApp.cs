@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 namespace BubbleBubble
 {
     [DisallowMultipleComponent]
-    public sealed class GameApp : MonoBehaviour
+    public sealed partial class GameApp : MonoBehaviour
     {
         public GameWorld World { get; private set; }
         readonly Dictionary<int, SpriteRenderer> views = new Dictionary<int, SpriteRenderer>();
@@ -48,7 +48,7 @@ namespace BubbleBubble
         void Awake()
         {
             Application.targetFrameRate = 60;
-            var stages = Enumerable.Range(1,10).Select(i => {
+            var stages = Enumerable.Range(1,GameRules.CampaignStageCount).Select(i => {
                 var asset = Resources.Load<TextAsset>($"Stages/stage-{i:00}");
                 if(asset == null) throw new InvalidOperationException($"Missing stage {i}");
                 return JsonUtility.FromJson<StageData>(asset.text);
@@ -88,6 +88,7 @@ namespace BubbleBubble
                     if(Input.GetKeyDown(KeyCode.Alpha2))OpenStory(2);
                 }
             }
+            UpdateStoryAnimation();
             ReadInput(0,KeyCode.A,KeyCode.D,KeyCode.W,KeyCode.F);
             ReadInput(1,KeyCode.LeftArrow,KeyCode.RightArrow,KeyCode.UpArrow,KeyCode.Period);
             accumulator += Math.Min(Time.unscaledDeltaTime,.1f);
@@ -127,6 +128,7 @@ namespace BubbleBubble
         public void PreviousStory() { storyPage=Math.Max(0,storyPage-1);PlayStoryVoice(); }
         public void PlayStoryVoice()
         {
+            storyAnimationTime=0;
             storyVoice.Stop();storyVoice.clip=storyVoices[storyPage];
             if(storyVoice.clip!=null)storyVoice.Play();
         }
@@ -174,14 +176,7 @@ namespace BubbleBubble
             var layout=World.Stage.layout;
             for(int y=0;y<layout.Length;y++)for(int x=0;x<layout[y].Length;x++)
                 if(layout[y][x]=='#')scenery.Add(MakeSprite("Platform "+x+","+y,(drawnStage<6?"theme-platform-"+drawnStage:"platform-s"+(drawnStage+1)),x*32+16,y*32+16,32,32,-5).gameObject);
-            if(drawnStage<6)
-            {
-                for(int i=0;i<3;i++)
-                {
-                    var decoration=MakeSprite("Theme decoration "+i,"theme-food-"+drawnStage,110+i*146,145+(i%2)*140,100,100,-8);
-                    decoration.color=new Color(1,1,1,.28f);scenery.Add(decoration.gameObject);
-                }
-            }
+            DrawBrandBackdrop();
             if(drawnStage==4)
             {
                 for(int i=0;i<5;i++)
@@ -242,9 +237,10 @@ namespace BubbleBubble
             GUI.matrix=Matrix4x4.TRS(new Vector3((Screen.width-512*scale)/2,(Screen.height-448*scale)/2,0),Quaternion.identity,new Vector3(scale,scale,1));
             Box(new Rect(0,0,512,32),new Color(.05f,.04f,.11f,.98f));
             Label(12,3,188,24,$"SCORE {World.Score:000000}");
-            Label(205,3,130,24,$"STAGE {World.StageIndex+1:00}");
+            Label(205,3,130,24,$"STAGE {World.StageIndex+1}/{World.Stages.Length}");
             Label(343,3,100,24,$"TIME {Math.Ceiling(World.TimeLeft):000}");
             if(GUI.Button(new Rect(452,5,49,22),music.Enabled?"♪ ON":"♪ OFF",small))music.Toggle();
+            DrawBrandSign();
             if(World.Phase!=GamePhase.Menu)
             {
                 Label(12,417,220,24,string.Join("   ",World.Players.Select(p=>$"{p.index+1}P ♥ {p.lives}")));
@@ -302,7 +298,7 @@ namespace BubbleBubble
             Center(276,"1P  A / D 이동 · W 점프 · F 거품",12);
             Center(300,"2P  ← / → 이동 · ↑ 점프 · . 거품",12);
             Center(332,"아이템은 랜덤 등장 · 효과는 이번 스테이지까지",10);
-            Center(353,"쓰레기통·똥은 피하세요! · 마지막 10탄은 랜덤 보스",10);
+            Center(353,"총 6탄 · 매 탄 랜덤 보스 · 마지막 왕을 잡으면 엔딩",10);
             Center(375,"Esc 일시정지 · C 이어하기 · M 음악",10);
         }
         void Story()
@@ -310,65 +306,23 @@ namespace BubbleBubble
             Box(new Rect(28,45,456,360),new Color(.055f,.04f,.13f,.98f));
             Center(56,story.pages[storyPage].title,18);
             Box(new Rect(72,91,368,166),new Color(.11f,.16f,.27f));
-            if(showingEnding)
-            {
-                Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
-                Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
-                for(int i=0;i<6;i++)DrawStoryFood("theme-food-"+i,260+(i%3)*40,120+(i/3)*48);
-                if(storyPage==0)DrawStoryFood("bubble",310,200);
-                if(storyPage==3)DrawStoryFood("theme-food-0",155,150);
-            }
-            else if(storyPage<=2)
-            {
-                Box(new Rect(247,105,145,143),new Color(.78f,.88f,.91f));
-                Box(new Rect(254,112,131,129),new Color(.15f,.22f,.31f));
-                for(int y=146;y<=226;y+=40)Box(new Rect(259,y,120,3),new Color(.66f,.82f,.88f));
-                if(storyPage==0)
-                {
-                    DrawStoryFood("theme-food-0",274,115);DrawStoryFood("theme-food-1",320,115);DrawStoryFood("theme-food-2",354,115);
-                    DrawStoryFood("theme-food-3",277,155);DrawStoryFood("theme-food-5",320,155);
-                }
-                DrawStoryFood("cookie",313,197);
-                if(storyPage==2)DrawStoryFood("bubble",280,156);
-            }
-            else if(storyPage==4)
-            {
-                for(int i=0;i<6;i++)
-                {
-                    int x=100+(i%3)*120,y=110+(i/3)*65;
-                    DrawStoryFood("theme-food-"+i,x,y);
-                    Label(x-10,y+30,115,20,new[]{"도쿄빙수","케이크","아이스크림","마카롱","수족관","수박"}[i],small);
-                }
-            }
-            else if(storyPage==6)
-            {
-                DrawStoryFood("cookie",238,124);
-            }
-            else
-            {
-                Box(new Rect(255,105,136,140),new Color(.25f,.39f,.52f));
-                DrawStoryFood(storyPage==7?"theme-food-0":"strawberry",300,130);
-                DrawStoryFood("ghost_enemy-v0",330,183);
-                DrawStoryFood("bubble",275,185);
-            }
-            if(storyPage!=4)
-            {
-                DrawPortrait("nakkong",120,179);DrawPortrait("muning",185,179);
-            }
+            if(showingEnding)DrawAnimatedEnding();
+            else DrawAnimatedPrologue();
             for(int i=0;i<story.pages[storyPage].lines.Length;i++)
                 Center(263+i*20,story.pages[storyPage].lines[i],12);
             Label(88,323,80,20,$"{storyPage+1} / {StoryPageCount}",small);
+            if(GUI.Button(new Rect(205,322,219,21),AutoStoryAdvance?"자동 넘김 · 켜짐":"자동 넘김 · 꺼짐",small))
+                AutoStoryAdvance=!AutoStoryAdvance;
             if(storyPage>0 && GUI.Button(new Rect(88,346,112,34),"이전",button))PreviousStory();
-            if(GUI.Button(new Rect(205,346,86,34),"다시 듣기",button) && storyVoices[storyPage]!=null)
+            if(GUI.Button(new Rect(205,346,86,34),"다시 듣기",button))
             { PlayStoryVoice(); }
             var nextLabel=storyPage==StoryPageCount-1?(showingEnding?"클리어 화면":"모험 시작!"):"다음 ▶";
             if(GUI.Button(new Rect(300,346,124,34),nextLabel,button))AdvanceStory();
             Center(382,"한국어 음성 이야기 · Enter / Space 다음",9);
         }
-        void DrawStoryFood(string art,float x,float y)
-        { GUI.DrawTexture(new Rect(x,y,30,29),Art(art).texture,ScaleMode.ScaleToFit,true); }
         void DrawPortrait(string art,float x,float y) { GUI.DrawTexture(new Rect(x-23,y,46,49),Art(art).texture,ScaleMode.ScaleToFit,true); }
         void OnDestroy() {
+            if(brandPanel!=null)Destroy(brandPanel);
             foreach(var sprite in generatedSprites)
                 if(sprite!=null)
                 { Destroy(sprite.texture);Destroy(sprite); }

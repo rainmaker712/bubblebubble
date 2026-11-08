@@ -29,10 +29,10 @@
     "#.#..##..##..#.#",
     "#..............#",
     "#...##....##...#",
+    "#.##........##.#",
+    "#.#..........#.#",
     "#..............#",
-    "#.##...##...##.#",
     "#..............#",
-    "#....##..##....#",
     "#..............#",
     "#..##......##..#",
     "#......##......#",
@@ -66,7 +66,7 @@
       "behavior": "chase",
       "tile": {
         "x": 3,
-        "y": 9
+        "y": 4
       },
       "placeholderAsset": "green_dinosaur_ghost_shape"
     },
@@ -75,70 +75,10 @@
       "kind": "ghost_bubblun",
       "behavior": "patrol",
       "tile": {
-        "x": 11,
-        "y": 9
+        "x": 12,
+        "y": 4
       },
       "placeholderAsset": "green_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-3a",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 6,
-        "y": 5
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-3b",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 10,
-        "y": 3
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bubblun-3c",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 2,
-        "y": 7
-      },
-      "placeholderAsset": "green_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-3c",
-      "kind": "ghost_bobblun",
-      "behavior": "patrol",
-      "tile": {
-        "x": 13,
-        "y": 7
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bubblun-3d",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 5,
-        "y": 11
-      },
-      "placeholderAsset": "green_dinosaur_ghost_shape"
-    },
-    {
-      "id": "ghost-bobblun-3d",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 9,
-        "y": 11
-      },
-      "placeholderAsset": "blue_dinosaur_ghost_shape"
     }
   ],
   "items": [],
@@ -188,16 +128,30 @@
   ],
   "rules": {
     "startingLives": 3,
-    "timeLimitSeconds": 60,
+    "timeLimitSeconds": 85,
     "enrageAtSecondsRemaining": 25,
     "verticalWrap": true,
-    "clearWhenAllEnemiesDefeated": true,
-    "nextStageId": "stage-04-candy-cavern"
+    "clearWhenAllEnemiesDefeated": false,
+    "nextStageId": "stage-04-candy-cavern",
+    "clearWhenBossDefeated": true
   },
   "tutorial": [
     {
       "trigger": "stage_start",
-      "message": "과일과 간식을 모아 크게 성장하세요!"
+      "message": "3/6 보스전! 왕을 거품으로 공격하세요."
     }
-  ]
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 16,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
 }

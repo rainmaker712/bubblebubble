@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace BubbleBubble
 {
-    // JSON field names deliberately match the original ten stage files.
+    // JSON field names deliberately match the stage files.
     [Serializable] public class Tile { public int x, y; }
     [Serializable] public class StageTheme { public string background, music; public string[] palette; }
     [Serializable] public class PlayerSpawn { public int player; public string character; public Tile tile; }
@@ -95,6 +95,7 @@ namespace BubbleBubble
 
     public static class GameRules
     {
+        public const int CampaignStageCount = 6;
         public const float Width = 512, Height = 448, TileSize = 32, Gravity = 840;
         public static int BossDamage(string element) => element == "fire" ? 3 : element == "lightning" ? 2 : 1;
         public static float Clamp(float v, float min, float max) => Math.Max(min, Math.Min(max, v));

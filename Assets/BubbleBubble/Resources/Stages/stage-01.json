@@ -29,11 +29,11 @@
     "#..............#",
     "#....##..##....#",
     "#..............#",
-    "#..##......##..#",
+    "#.###......###.#",
     "#..............#",
-    "#.....####.....#",
     "#..............#",
-    "#..##......##..#",
+    "#..............#",
+    "#..............#",
     "#..............#",
     "#.##........##.#",
     "#..............#",
@@ -66,31 +66,13 @@
       "behavior": "patrol",
       "tile": {
         "x": 3,
-        "y": 8
+        "y": 4
       }
     },
     {
       "id": "g11",
       "kind": "ghost_bobblun",
       "behavior": "patrol",
-      "tile": {
-        "x": 12,
-        "y": 8
-      }
-    },
-    {
-      "id": "g12",
-      "kind": "ghost_bubblun",
-      "behavior": "chase",
-      "tile": {
-        "x": 3,
-        "y": 4
-      }
-    },
-    {
-      "id": "g13",
-      "kind": "ghost_bobblun",
-      "behavior": "chase",
       "tile": {
         "x": 12,
         "y": 4
@@ -101,17 +83,30 @@
   "airflow": [],
   "rules": {
     "startingLives": 3,
-    "timeLimitSeconds": 70,
+    "timeLimitSeconds": 75,
     "enrageAtSecondsRemaining": 30,
     "verticalWrap": true,
-    "clearWhenAllEnemiesDefeated": true,
+    "clearWhenAllEnemiesDefeated": false,
     "nextStageId": "stage-02-starlight-stairs",
-    "clearWhenBossDefeated": false
+    "clearWhenBossDefeated": true
   },
   "tutorial": [
     {
       "trigger": "stage_start",
-      "message": "귀신을 거품에 가두고 톡! 아이템은 게임 중 랜덤으로 등장해요."
+      "message": "1/6 보스전! 왕을 거품으로 공격하세요."
     }
-  ]
+  ],
+  "boss": {
+    "name": "랜덤 왕",
+    "hp": 12,
+    "tile": {
+      "x": 8,
+      "y": 7
+    },
+    "variants": [
+      "lightning",
+      "fire",
+      "ice"
+    ]
+  }
 }
