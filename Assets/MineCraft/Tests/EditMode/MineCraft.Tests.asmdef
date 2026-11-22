@@ -1,0 +1,1 @@
+{"name":"MineCraft.Tests","references":["MineCraft.Runtime"],"includePlatforms":["Editor"],"optionalUnityReferences":["TestAssemblies"]}

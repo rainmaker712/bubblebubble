@@ -15,6 +15,11 @@ namespace BubbleBubble.Tests
             game.LoadStage(stage);
             return game;
         }
+        [Test] public void BootstrapsOnlyInBubbleBubbleScenes()
+        {
+            Assert.IsTrue(GameApp.ShouldBootstrap("Assets/BubbleBubble/Scenes/Main.unity"));
+            Assert.IsFalse(GameApp.ShouldBootstrap("Assets/MineCraft/Scenes/MineCraft.unity"));
+        }
         [Test] public void FirstSixStagesFollowTheFoodAdventure()
         {
             CollectionAssert.AreEqual(new[]{"tokyo_bingsu","cake","icecream","macaron","aquarium","watermelon"},

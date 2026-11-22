@@ -43,8 +43,11 @@ namespace BubbleBubble
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Bootstrap()
         {
+            // MineCraft shares this project, so never inject BubbleBubble into its scenes.
+            if (!ShouldBootstrap(SceneManager.GetActiveScene().path)) return;
             if (FindFirstObjectByType<GameApp>() == null) new GameObject("BubbleBubble").AddComponent<GameApp>();
         }
+        public static bool ShouldBootstrap(string scenePath) => !scenePath.StartsWith("Assets/MineCraft/");
         void Awake()
         {
             Application.targetFrameRate = 60;
